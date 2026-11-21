@@ -76,6 +76,10 @@ docker compose -f deploy/compose.quality.yml down
 Они не подтверждают запуск настоящего LanguageTool. Выполненный запуск
 подтверждается только реальными ответами сервера в `reports/raw/`.
 
+Настоящий контейнер LanguageTool 6.8 успешно проверен в GitHub Actions
+21 ноября 2026 года: две намеренные ошибки русского тестового текста найдены,
+целостность исходных ответов подтверждена. [Результаты и наблюдавшийся digest](../docs/validation.md).
+
 Источники: [документация своего HTTP server](https://dev.languagetool.org/http-server),
 [ограничения public API](https://dev.languagetool.org/public-http-api.html),
 [документация образа](https://github.com/Erikvl87/docker-languagetool).
