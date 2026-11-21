@@ -1,0 +1,25 @@
+# Tag 6.8 verified against the image publisher's Docker Hub tag listing on
+# 2026-11-21. This is a community image linked by LanguageTool's upstream README.
+# A version tag is not an immutable digest. Record RepoDigests after pulling if
+# deployment reproducibility requires an immutable image reference.
+services:
+  languagetool:
+    image: erikvl87/languagetool:6.8
+    ports:
+      - "127.0.0.1:8010:8010"
+    environment:
+      Java_Xms: "256m"
+      Java_Xmx: "1g"
+      langtool_maxTextLength: "20000"
+      langtool_maxCheckTimeMillis: "20000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8010/v2/languages"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 60s

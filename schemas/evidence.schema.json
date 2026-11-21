@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "kind", "statement", "verification", "source_ids", "locators", "scope"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^C[0-9]{3,}$"},
+    "kind": {"enum": ["source", "inference"]},
+    "statement": {"type": "string", "minLength": 5},
+    "verification": {"enum": ["verified", "unverified", "contradicted"]},
+    "source_ids": {"type": "array", "items": {"type": "string", "pattern": "^S[0-9]{3,}$"}, "uniqueItems": true},
+    "locators": {"type": "object", "additionalProperties": {"type": "string", "minLength": 2}},
+    "scope": {"type": "string", "minLength": 5},
+    "support_span": {"enum": ["full_text", "selected_pages", "abstract", "derived"]},
+    "depends_on": {"type": "array", "items": {"type": "string", "pattern": "^C[0-9]{3,}$"}, "uniqueItems": true},
+    "result_ids": {"type": "array", "items": {"type": "string", "pattern": "^R[0-9]{3,}$"}, "uniqueItems": true},
+    "contradicts": {"type": "array", "items": {"type": "string"}},
+    "short_excerpt": {"type": "string"}
+  }
+}
+

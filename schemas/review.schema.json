@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["manuscript_sha256", "review_context_sha256", "reviewer_id", "reviewer_role", "independent_of_author", "decision", "issues"],
+  "properties": {
+    "manuscript_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "review_context_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "reviewer_role": {"enum": ["domain-reviewer", "methods-reviewer", "chief-reviewer"]},
+    "independent_of_author": {"type": "boolean"},
+    "decision": {"enum": ["accept", "minor_revision", "major_revision", "reject"]},
+    "issues": {"type": "array", "items": {"type": "object", "required": ["id", "severity", "location", "reason", "action", "status", "evidence_ids"], "properties": {"id": {"type": "string", "minLength": 1}, "severity": {"enum": ["blocker", "major", "minor"]}, "location": {"type": "string", "minLength": 1}, "reason": {"type": "string", "minLength": 5}, "action": {"type": "string", "minLength": 3}, "status": {"enum": ["open", "resolved"]}, "evidence_ids": {"type": "array", "items": {"type": "string"}}}}},
+    "scientific_ready": {"type": "boolean"},
+    "ready_for_submission": {"type": "boolean"},
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "scores": {"type": "object", "additionalProperties": {"type": "object", "required": ["score", "applicable", "reason"], "properties": {"score": {"type": ["integer", "null"], "minimum": 0, "maximum": 4}, "applicable": {"type": "boolean"}, "reason": {"type": "string", "minLength": 10}, "locations": {"type": "array", "items": {"type": "string"}}}, "allOf": [{"if": {"properties": {"score": {"type": "null"}}}, "then": {"properties": {"applicable": {"const": false}}}, "else": {"properties": {"applicable": {"const": true}}}}]}}
+  }
+}
+

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "title", "authors", "year", "url", "type", "access", "metadata_verified", "status", "tradition", "is_foundational"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^S[0-9]{3,}$"},
+    "title": {"type": "string", "minLength": 3},
+    "authors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "year": {"type": ["integer", "null"], "minimum": 1000, "maximum": 2200},
+    "url": {"type": "string", "pattern": "^https?://"},
+    "doi": {"type": ["string", "null"]},
+    "isbn": {"type": ["string", "null"]},
+    "type": {"enum": ["article", "book", "chapter", "thesis", "standard", "dataset", "software", "preprint", "other"]},
+    "access": {"enum": ["full_text", "selected_pages", "abstract_only", "metadata_only", "unavailable"]},
+    "metadata_verified": {"type": "boolean"},
+    "status": {"enum": ["candidate", "included", "excluded"]},
+    "tradition": {"enum": ["russian", "international", "other", "undetermined"]},
+    "is_foundational": {"type": "boolean"},
+    "verification_url": {"type": "string", "pattern": "^https?://"},
+    "verified_at": {"type": "string", "minLength": 10},
+    "read_locator": {"type": "string"},
+    "local_path": {"type": ["string", "null"]},
+    "content_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+  }
+}
+

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Report of a real externally executed check; self-attestation is not cryptographic proof",
+  "type": "object",
+  "required": ["tool", "status", "manuscript_sha256", "checked_at", "version", "attestation", "raw_report"],
+  "properties": {
+    "tool": {"type": "string"},
+    "status": {"enum": ["completed", "not_run", "unavailable", "failed"]},
+    "manuscript_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "checked_at": {"type": "string", "format": "date-time"},
+    "version": {"type": "string", "minLength": 1, "description": "Actual tool version, or not_reported if the service UI does not expose it"},
+    "attestation": {
+      "type": "object",
+      "required": ["performed_by", "method", "actual_run", "statement"],
+      "properties": {
+        "performed_by": {"type": "string", "minLength": 1},
+        "method": {"enum": ["manual_ui", "official_api"]},
+        "actual_run": {"const": true},
+        "statement": {"type": "string", "minLength": 10}
+      },
+      "additionalProperties": false
+    },
+    "findings": {"type": "array"},
+    "raw_report": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {"type": "object", "minProperties": 1},
+        {"type": "array", "minItems": 1}
+      ],
+      "description": "Actual provider output or verbatim manual export; never an invented score"
+    }
+  }
+}

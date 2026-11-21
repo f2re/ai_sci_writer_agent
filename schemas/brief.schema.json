@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "run_id", "topic", "language", "article_type", "research_questions", "empirical_required", "study_mode", "writer_ids", "review_mode", "author_style", "quality"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "topic": {"type": "string", "minLength": 3},
+    "language": {"enum": ["ru", "ru-RU"]},
+    "article_type": {"enum": ["review", "original", "theoretical", "protocol", "methods"]},
+    "research_questions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 5}, "uniqueItems": true},
+    "empirical_required": {"type": "boolean"},
+    "study_mode": {"enum": ["exploratory", "confirmatory", "not_applicable"]},
+    "writer_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "review_mode": {"enum": ["independent_sessions", "single_session"]},
+    "author_style": {"type": "object", "required": ["sample_paths", "samples_requested"], "properties": {"sample_paths": {"type": "array", "items": {"type": "string"}}, "samples_requested": {"type": "boolean"}}},
+    "quality": {"type": "object", "required": ["required_tools"], "properties": {"required_tools": {"type": "array", "minItems": 2, "items": {"enum": ["ru_science_lint", "languagetool", "glavred"]}, "uniqueItems": true}}}
+  }
+}
+

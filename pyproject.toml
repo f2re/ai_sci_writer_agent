@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-sci-writer-agent"
+version = "0.1.0"
+description = "Evidence-grounded scientific writing agents with Russian scholarly terminology and review gates"
+requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.23,<5"]
+
+[project.scripts]
+sci-writer = "sci_writer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

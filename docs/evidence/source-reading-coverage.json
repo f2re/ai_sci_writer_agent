@@ -1,0 +1,964 @@
+{
+  "checked_at": "2026-11-21",
+  "scope": "canonical skill, selected skill resources, Claude agent and selected root instruction files; excludes full Gemini/source-code audit",
+  "branch_count": 10,
+  "unique_file_versions": 83,
+  "unique_paths": 34,
+  "branch_occurrences": 206,
+  "unique_bytes": 522023,
+  "files": [
+    {
+      "path": ".agents/skills/article-architect/SKILL.md",
+      "blob_sha": "fed1f65644315bfeb089bb6d8322ad0153400b3e",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/article-architect/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/citation-audit/SKILL.md",
+      "blob_sha": "ff8cbbd936f1dbc3c4b0eaf8b1d203db1e03911a",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/citation-audit/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/evidence-analysis/SKILL.md",
+      "blob_sha": "413816c62f5d64b2755f73ce1780e068255f5327",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/evidence-analysis/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/experiment-reproduction/SKILL.md",
+      "blob_sha": "2606c9e27cefe7d9e4fadfe7887ddae7afd66ba8",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/experiment-reproduction/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/language-editor/SKILL.md",
+      "blob_sha": "04bd8eb59134306ba1ca67d1c9f66e4c4d443112",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/language-editor/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/language-editor/resources/russian-replacements.md",
+      "blob_sha": "bb7d1bd3087e4e4ff37194fa1f9eb8bb4872f3ad",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/language-editor/resources/russian-replacements.md"
+    },
+    {
+      "path": ".agents/skills/literature-search/SKILL.md",
+      "blob_sha": "f0ca60800de98af165524f456b3edaa8c5513fa4",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/literature-search/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/manuscript-finalize/SKILL.md",
+      "blob_sha": "d46e8c7dd3d996fc203a0cc8931e6913aa2a8691",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/manuscript-finalize/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/research-intake/SKILL.md",
+      "blob_sha": "1b2e56fc9d440a6ce9f91992336dd631f17688f0",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/research-intake/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/scientific-review/SKILL.md",
+      "blob_sha": "be6b12c14b4cc0eb885728b4cf191b7ba14497d8",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/scientific-review/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/theory-aprobation/SKILL.md",
+      "blob_sha": "affb898b10c6609edffa5ad138a4e0ec4565683a",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/theory-aprobation/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/theory-aprobation/resources/decision-framework.md",
+      "blob_sha": "5558dbd239a4b33237c37c35b18d2c086258401b",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/theory-aprobation/resources/decision-framework.md"
+    },
+    {
+      "path": ".agents/skills/write-conclusion/SKILL.md",
+      "blob_sha": "4d788f9e0cc6790f834d160f659d6e4c43bdaf39",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/write-conclusion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-discussion/SKILL.md",
+      "blob_sha": "45492f4cd9bd14cf695bd284f8075baf26dad4d3",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/write-discussion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-introduction/SKILL.md",
+      "blob_sha": "eb4c97d1cca4c8fbda667b850c54529bdcb7df97",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/write-introduction/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-methods/SKILL.md",
+      "blob_sha": "6b4a6d8b57ec58baf7c3cca043822d4730ae30e2",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/write-methods/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-results/SKILL.md",
+      "blob_sha": "0bea55672dee05360fae63cd215257248e92dd5f",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.agents/skills/write-results/SKILL.md"
+    },
+    {
+      "path": ".claude/agents/analyzer.md",
+      "blob_sha": "b67e44e9630ef09b4c0ec8250e972803a7b05c0a",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/analyzer.md"
+    },
+    {
+      "path": ".claude/agents/article-searcher.md",
+      "blob_sha": "6a7a32a401c14403eb8510b108e596048d12f54d",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/article-searcher.md"
+    },
+    {
+      "path": ".claude/agents/editor.md",
+      "blob_sha": "9da22b05ac137b7431d70d3f24c46e8a9d5dc297",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/editor.md"
+    },
+    {
+      "path": ".claude/agents/experiment-reproducer.md",
+      "blob_sha": "4f7d2ada2ca48c707999e9674a42da01c945b669",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/experiment-reproducer.md"
+    },
+    {
+      "path": ".claude/agents/language-editor.md",
+      "blob_sha": "00e11e0211f86e79082a80369f0cf26669339c98",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/language-editor.md"
+    },
+    {
+      "path": ".claude/agents/reviewer.md",
+      "blob_sha": "654f4b9a4578ae754bfcf4c91f17aee20ace4705",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/reviewer.md"
+    },
+    {
+      "path": ".claude/agents/theory-aprobation.md",
+      "blob_sha": "ab5befa6c543e9c7134be93c1b9769f4a474cc97",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/theory-aprobation.md"
+    },
+    {
+      "path": ".claude/agents/writer-discussion.md",
+      "blob_sha": "3cd2dd23e3dc1f8a6fede97c69906fdc0ab0027a",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/writer-discussion.md"
+    },
+    {
+      "path": ".claude/agents/writer-intro.md",
+      "blob_sha": "acbf36382711bea2496265a298db579dad7eddf3",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/writer-intro.md"
+    },
+    {
+      "path": ".claude/agents/writer-methods.md",
+      "blob_sha": "713bd139f0c2e0230750846acee7d4657f8b4ff9",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/writer-methods.md"
+    },
+    {
+      "path": ".claude/agents/writer-results.md",
+      "blob_sha": "6ba329972ecfbc0d9ee2663363fba5e1e3858219",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/.claude/agents/writer-results.md"
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "73dc5e91708cf0e2ec3b17abcefe16f7764c5d9f",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/AGENTS.md"
+    },
+    {
+      "path": "AUTOR_STYLE.md",
+      "blob_sha": "6652895ff9192c0c753493f0b27079c5bc6d9578",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3",
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/AUTOR_STYLE.md"
+    },
+    {
+      "path": "AUTOR_STYLE_QUICK_REF.md",
+      "blob_sha": "74d18d3c1bf3bd7ec8edf13e9d1d69ec4058b549",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3",
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/AUTOR_STYLE_QUICK_REF.md"
+    },
+    {
+      "path": "MULTI_AGENT_PLAN.md",
+      "blob_sha": "55301f2f452043698dc42b9d0ebf7904635e21f4",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/MULTI_AGENT_PLAN.md"
+    },
+    {
+      "path": "ORCHESTRATOR_INSTRUCTIONS.md",
+      "blob_sha": "57ac28a9ffbed2ed27e5315d75975f04927bba94",
+      "commit": "0e162efee1e20a6793efb8b3b777f7560385d57b",
+      "branches": [
+        "agent/russian-naturalness-gate",
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/0e162efee1e20a6793efb8b3b777f7560385d57b/ORCHESTRATOR_INSTRUCTIONS.md"
+    },
+    {
+      "path": ".agents/skills/manuscript-finalize/SKILL.md",
+      "blob_sha": "22c55c198409a1255be0ee5d569f1dc6a62b4862",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/manuscript-finalize/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/scientific-review/SKILL.md",
+      "blob_sha": "9de6e3aac5309396f7244f83780bfdffa0a41493",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/scientific-review/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-conclusion/SKILL.md",
+      "blob_sha": "5180ec2861b989f82f9056c7eb311956d6f60d2a",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/write-conclusion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-discussion/SKILL.md",
+      "blob_sha": "4b911d8cfba01a6e87db15b2b572c90a6af36423",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/write-discussion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-introduction/SKILL.md",
+      "blob_sha": "0b8764ea2c5bde557f3b76a88e871ed4ae59d4b0",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main",
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/write-introduction/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-methods/SKILL.md",
+      "blob_sha": "22ef78114cca7f049b3a2514d8d337bdefed3a7b",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/write-methods/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-results/SKILL.md",
+      "blob_sha": "7c21480a93128a7b2aa0f65b0c56973071c97276",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/.agents/skills/write-results/SKILL.md"
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "9bed3b4e63a57b06a524fe1000ee7300eefb1e10",
+      "commit": "3314679d670d199a7178346c001be33c43e5a14c",
+      "branches": [
+        "agent/theory-aprobation-audit",
+        "main"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3314679d670d199a7178346c001be33c43e5a14c/AGENTS.md"
+    },
+    {
+      "path": ".claude/agents/analyzer.md",
+      "blob_sha": "bc82ef0e57863e70d0dc7d689dfeac2f30baf79a",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/analyzer.md"
+    },
+    {
+      "path": ".claude/agents/article-searcher.md",
+      "blob_sha": "f170ce07d21e036ed5ef29f1fb3ea169e7bf9604",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/article-searcher.md"
+    },
+    {
+      "path": ".claude/agents/editor.md",
+      "blob_sha": "465fe6251040cfee94951e8b0a182657e7a1f7cc",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/editor.md"
+    },
+    {
+      "path": ".claude/agents/experiment-reproducer.md",
+      "blob_sha": "2d13bc71eae3c8b1df77c78754240217139040e1",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/experiment-reproducer.md"
+    },
+    {
+      "path": ".claude/agents/remote-execution-operator.md",
+      "blob_sha": "911f3618c7598747951076923260355c3815f0ad",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/remote-execution-operator.md"
+    },
+    {
+      "path": ".claude/agents/reviewer.md",
+      "blob_sha": "0dcb5d164fe83ee6d20636c10305c7d348377258",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/reviewer.md"
+    },
+    {
+      "path": ".claude/agents/writer-discussion.md",
+      "blob_sha": "9022b62fd0928bb2c4969b38e18b941389d4330d",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/writer-discussion.md"
+    },
+    {
+      "path": ".claude/agents/writer-intro.md",
+      "blob_sha": "7e2cecb2d1916aa6d6272f38c6c2d23094a006a9",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/writer-intro.md"
+    },
+    {
+      "path": ".claude/agents/writer-methods.md",
+      "blob_sha": "6a12d372621bf48eaf8f618a55af6755932800b9",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/writer-methods.md"
+    },
+    {
+      "path": ".claude/agents/writer-results.md",
+      "blob_sha": "78e1c4a0f1b3b2389e00f89b1466162cf9afad83",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/.claude/agents/writer-results.md"
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "04315f2823834c7a6d8243741605ff5f35f9895f",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/AGENTS.md"
+    },
+    {
+      "path": "AUTOR_STYLE.md",
+      "blob_sha": "b7279b60cf00bcd6157e3cae6a7187732c697c9e",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/AUTOR_STYLE.md"
+    },
+    {
+      "path": "AUTOR_STYLE_QUICK_REF.md",
+      "blob_sha": "43f9fa065cbb61939f9e5cdb7a1517f9feb0818a",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix",
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/AUTOR_STYLE_QUICK_REF.md"
+    },
+    {
+      "path": "MULTI_AGENT_PLAN.md",
+      "blob_sha": "6bac3fe85864b0ad61eb933b0d82c0f538543c88",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/MULTI_AGENT_PLAN.md"
+    },
+    {
+      "path": "ORCHESTRATOR_INSTRUCTIONS.md",
+      "blob_sha": "adf8cc924cad3eab2f335d1e89740b1bc7d3f11b",
+      "commit": "afb954c8cf0a3d1f255be714621ec47a64153740",
+      "branches": [
+        "codex/climate-source-contracts-20261009",
+        "codex/hydrospec-v4-matrix"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/afb954c8cf0a3d1f255be714621ec47a64153740/ORCHESTRATOR_INSTRUCTIONS.md"
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "6df0ef3ad1674d1d9447292b9ada62fa63ead6c2",
+      "commit": "126162abc180ae99b57b602c54b6a0ea3ffd137a",
+      "branches": [
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/126162abc180ae99b57b602c54b6a0ea3ffd137a/AGENTS.md"
+    },
+    {
+      "path": "MULTI_AGENT_PLAN.md",
+      "blob_sha": "2aaa6d566b6039d2dfebfb623602aa1c9f378174",
+      "commit": "126162abc180ae99b57b602c54b6a0ea3ffd137a",
+      "branches": [
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/126162abc180ae99b57b602c54b6a0ea3ffd137a/MULTI_AGENT_PLAN.md"
+    },
+    {
+      "path": "ORCHESTRATOR_INSTRUCTIONS.md",
+      "blob_sha": "7452a62860b501d2000c4b5ec987634dbe24e47d",
+      "commit": "126162abc180ae99b57b602c54b6a0ea3ffd137a",
+      "branches": [
+        "codex/readiness-audit-20261026",
+        "profile"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/126162abc180ae99b57b602c54b6a0ea3ffd137a/ORCHESTRATOR_INSTRUCTIONS.md"
+    },
+    {
+      "path": ".agents/skills/article-architect/SKILL.md",
+      "blob_sha": "1499f8e8e276801104ea6f66b9d0b21b9af8dc7c",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/article-architect/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/evidence-analysis/SKILL.md",
+      "blob_sha": "a6288b4687942b7f3f17d200795bafd7ffc9507f",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/evidence-analysis/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/experiment-reproduction/SKILL.md",
+      "blob_sha": "f8add62e38b8f23c90e591a2a66e97f141170073",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/experiment-reproduction/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/manuscript-finalize/SKILL.md",
+      "blob_sha": "ee8df4a202cfb9637d4ad6c840c2e4b549bc3ecc",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/manuscript-finalize/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/research-intake/SKILL.md",
+      "blob_sha": "4962b6cdd4b98be0a66e16de91d3283a5f03add7",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/research-intake/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/scientific-review/SKILL.md",
+      "blob_sha": "3642cc998dccd8cf0156c81627319d8b89319c74",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/scientific-review/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-conclusion/SKILL.md",
+      "blob_sha": "1106f6ca104fbc111c4d714734001726f37b2960",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/write-conclusion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-discussion/SKILL.md",
+      "blob_sha": "757ee9104678620ffd79c2225aa15d73eea7b35b",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/write-discussion/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-methods/SKILL.md",
+      "blob_sha": "ba5396cd28b3fa51e307569fd37f81f670cb4d34",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/write-methods/SKILL.md"
+    },
+    {
+      "path": ".agents/skills/write-results/SKILL.md",
+      "blob_sha": "c6e9402e94ac57336116cde00a4fd7bf178b024a",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/.agents/skills/write-results/SKILL.md"
+    },
+    {
+      "path": "AGENTS.md",
+      "blob_sha": "dd6f5045f2b83b83bc1fdc1b5ef59e22c09922ff",
+      "commit": "3e0220e52eb942c5b166b77620a1fb4de452bb4e",
+      "branches": [
+        "migration-antigravity-codex-v3"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/3e0220e52eb942c5b166b77620a1fb4de452bb4e/AGENTS.md"
+    },
+    {
+      "path": ".claude/agents/analyzer.md",
+      "blob_sha": "1d5caf9c1a5bd96b34301e4903bd119b46b2126d",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/analyzer.md"
+    },
+    {
+      "path": ".claude/agents/article-searcher.md",
+      "blob_sha": "d7627cf0c3c4fcb0ff1b4640046ed1cac00960e6",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/article-searcher.md"
+    },
+    {
+      "path": ".claude/agents/editor.md",
+      "blob_sha": "1593eeb407df753482d9907e60336bc2b5f668e0",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/editor.md"
+    },
+    {
+      "path": ".claude/agents/experiment-reproducer.md",
+      "blob_sha": "0976be9871ebff7fe7bc06c0cefd5020cdf17b8c",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/experiment-reproducer.md"
+    },
+    {
+      "path": ".claude/agents/reviewer.md",
+      "blob_sha": "789664d534f78c0d408c16b6e10d194dcd8a7af6",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/reviewer.md"
+    },
+    {
+      "path": ".claude/agents/writer-discussion.md",
+      "blob_sha": "4e9f314194e66a7b233f5cd1dc554a5265c838bf",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/writer-discussion.md"
+    },
+    {
+      "path": ".claude/agents/writer-intro.md",
+      "blob_sha": "a68c5a17447f8de08a6ad9761e21170b494ceff3",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/writer-intro.md"
+    },
+    {
+      "path": ".claude/agents/writer-methods.md",
+      "blob_sha": "6cf28d72b33b9b1de3079703761eeffbe3d5af6f",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/writer-methods.md"
+    },
+    {
+      "path": ".claude/agents/writer-results.md",
+      "blob_sha": "b94873dab838a17099ad5e22d8e4ba212aa13935",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/.claude/agents/writer-results.md"
+    },
+    {
+      "path": "MULTI_AGENT_PLAN.md",
+      "blob_sha": "43a83b1fda6b949d899763393379c7610b63c55c",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/MULTI_AGENT_PLAN.md"
+    },
+    {
+      "path": "ORCHESTRATOR_INSTRUCTIONS.md",
+      "blob_sha": "b63aa645bdad1998d5e08fc3142775bd90c146f4",
+      "commit": "86e4d9cfb2c914d8643d09d723932d1b4d27d8b7",
+      "branches": [
+        "research/profile-run02-20260912",
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/86e4d9cfb2c914d8643d09d723932d1b4d27d8b7/ORCHESTRATOR_INSTRUCTIONS.md"
+    },
+    {
+      "path": ".claude/agents/analyzer.md",
+      "blob_sha": "cac3e95f2962a339ae87ce26656370930bfe6a96",
+      "commit": "4aba11cfb21a22d1528634e1f2aa367174f247de",
+      "branches": [
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/4aba11cfb21a22d1528634e1f2aa367174f247de/.claude/agents/analyzer.md"
+    },
+    {
+      "path": ".claude/agents/article-searcher.md",
+      "blob_sha": "9ac441fa9b94fb79e5988e9cbe158dbee62fc5ed",
+      "commit": "4aba11cfb21a22d1528634e1f2aa367174f247de",
+      "branches": [
+        "wind300m"
+      ],
+      "reviewed": true,
+      "source_url": "https://github.com/f2re/scientific-article-system/blob/4aba11cfb21a22d1528634e1f2aa367174f247de/.claude/agents/article-searcher.md"
+    }
+  ]
+}

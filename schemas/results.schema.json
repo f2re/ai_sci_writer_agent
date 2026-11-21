@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "required": ["results"],
+  "properties": {
+    "not_applicable_reason": {"type": "string"},
+    "results": {"type": "array", "items": {"type": "object", "required": ["id", "value", "unit", "kind", "dataset_ids", "command", "executed_at", "log_path", "log_sha256", "analysis_plan_sha256"], "properties": {
+      "id": {"type": "string", "pattern": "^R[0-9]{3,}$"},
+      "value": {"type": ["number", "string"], "minLength": 1},
+      "unit": {"type": "string", "minLength": 1},
+      "kind": {"enum": ["empirical", "synthetic", "simulation", "analytical"]},
+      "dataset_ids": {"type": "array", "items": {"type": "string"}},
+      "command": {"type": "string", "minLength": 3},
+      "executed_at": {"type": "string", "minLength": 20},
+      "log_path": {"type": "string", "minLength": 1},
+      "log_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+      "analysis_plan_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+      "code_paths": {"type": "array", "items": {"type": "string"}}
+    }}}
+  }
+}
+
