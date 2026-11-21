@@ -1,0 +1,3 @@
+# Historical design research is outside normal article context.
+# Terminal/MCP tools can still read these paths; this is not a security boundary.
+research-archive/

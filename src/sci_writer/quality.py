@@ -24,7 +24,8 @@ from urllib.parse import urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 
 
-RULESET_VERSION = "ru-science-1.0.0"
+RULESET_VERSION = "ru-science-2.0.0"
+EN_RULESET_VERSION = "en-abstract-basic-1.0.0"
 DEFAULT_REQUIRED_TOOLS = ("ru_science_lint", "languagetool")
 _WORDS = re.compile(r"[^\W\d_]+(?:[-’'][^\W\d_]+)*", re.UNICODE)
 _REFERENCE_HEADING = re.compile(
@@ -55,6 +56,10 @@ _RULES = (
      "warning", "Проверьте критерий сравнения; устойчивый научный термин можно сохранить с обоснованием."),
     ("priority_claim", r"\b(?:впервые|несомненно|безусловно|очевидно)\b",
      "warning", "Проверьте основание приоритета или степени уверенности; автоматическая замена не требуется."),
+    ("translated_cliche", r"\b(?:пролива(?:ет|ют) свет|ключевым аспектом является|демонстриру(?:ет|ют) (?:значительный )?потенциал|вносит (?:значительный|существенный) вклад в понимание)\b",
+     "warning", "Возможный переводной штамп: уточните, какой результат, механизм или предел применения описан. Осмысленную формулировку можно сохранить."),
+    ("split_predicate", r"\b(?:осуществлени[ея]|осуществля(?:ется|ются|ть)|осуществить|осуществлено)\s+(?:оценк[аиу]|анализ[а]?|расч[её]т[а]?|измерени[яйе])\b|\b(?:проведени[ея]|провести|проводится|проведено)\s+(?:анализ[а]?|оценк[аиу]|сопоставлени[ея])\b",
+     "warning", "Возможное расщепление сказуемого: проверьте, можно ли назвать действие глаголом без потери смысла. Термин или название процедуры сохраняйте."),
     ("placeholder", r"\b(?:TODO|TBD|FIXME|SOURCE_NEEDED)\b|\[(?:нужен источник|добавить[^\]\n]*)\]|\{\{[^}\n]+\}\}",
      "error", "В рукописи осталась незаполненная служебная пометка."),
 )
@@ -70,7 +75,7 @@ def _blank(chars: list[str], start: int, end: int) -> None:
             chars[i] = " "
 
 
-def mask_nonprose(text: str) -> str:
+def mask_nonprose(text: str, *, mask_quotes: bool = True) -> str:
     """Mask references, code, formulas and direct quotes, preserving offsets.
 
     This is a conservative Markdown/plain-text scanner, not a TeX parser.
@@ -114,12 +119,14 @@ def mask_nonprose(text: str) -> str:
 
     # Code and math before quotation scanning so quote marks inside them do not
     # accidentally consume neighbouring prose. All masks keep original length.
-    for pattern in (
+    patterns = [
         r"(`+)[^`\n]*?\1", r"\$\$[\s\S]*?\$\$", r"\\\[[\s\S]*?\\\]",
         r"\\\([\s\S]*?\\\)", r"(?<!\\)\$(?!\$)[^$\n]+(?<!\\)\$",
-        r"«[^»]*»", r"“[^”]*”", r'"[^"\n]+"',
         r"https?://[^\s<>]+", r"\[@[^\]\n]+\]", r"\[(?:SRC|INF|EXP):[^\]\n]+\]",
-    ):
+    ]
+    if mask_quotes:
+        patterns.extend([r"«[^»]*»", r"“[^”]*”", r'"[^"\n]+"'])
+    for pattern in patterns:
         current = "".join(chars)
         for match in re.finditer(pattern, current):
             _blank(chars, match.start(), match.end())
@@ -259,7 +266,156 @@ def _finding(text: str, rule: str, start: int, end: int, severity: str, message:
     }
 
 
-def analyze_text(text: str, *, language: str = "ru", protected_terms: Sequence[str] = (), author_samples: Sequence[str] = (), author_style_mode: str = "author_samples") -> dict[str, Any]:
+def _json_sha256(value: Any) -> str:
+    return manuscript_sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False))
+
+
+def _term_pattern(term: str) -> str:
+    return r"(?<!\w)" + re.escape(term).replace(r"\ ", r"\s+") + r"(?!\w)"
+
+
+def _glossary_findings(text: str, visible: str, glossary: dict[str, Any]) -> list[dict[str, Any]]:
+    """Find explicit equations of non-equivalent terms, not mere coexistence.
+
+    Literal preferred/allowed forms only: this is not a semantic contradiction
+    detector, and it deliberately misses paraphrases rather than inventing them.
+    """
+    entries = glossary.get("entries", [])
+    if not isinstance(entries, list):
+        raise ValueError("glossary.entries must be an array")
+    by_id = {entry.get("id"): entry for entry in entries if isinstance(entry, dict) and entry.get("id")}
+    pairs: set[tuple[str, str]] = set()
+    findings: list[dict[str, Any]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("glossary entries must be objects")
+        for relation in entry.get("relations", []):
+            if not isinstance(relation, dict) or relation.get("type") != "not_equivalent":
+                continue
+            target = by_id.get(relation.get("target_id"))
+            if not target or not entry.get("id"):
+                continue  # The glossary contract validator reports broken links.
+            pair = tuple(sorted((entry["id"], target["id"])))
+            if pair in pairs:
+                continue
+            pairs.add(pair)
+            left = [entry.get("preferred", ""), *entry.get("allowed_variants", [])]
+            right = [target.get("preferred", ""), *target.get("allowed_variants", [])]
+            for a, b in ((left, right), (right, left)):
+                a_pattern = "(?:" + "|".join(_term_pattern(t) for t in a if isinstance(t, str) and t.strip()) + ")"
+                b_pattern = "(?:" + "|".join(_term_pattern(t) for t in b if isinstance(t, str) and t.strip()) + ")"
+                if a_pattern == "(?:)" or b_pattern == "(?:)":
+                    continue
+                patterns = (
+                    a_pattern + r"\s*(?:[,—–-]\s*)?(?:то есть|т\.\s*е\.|иначе говоря|это|эквивалент(?:ен|на|но|ны)?|равнознач(?:ен|на|но|ны)?|синоним)\s+" + b_pattern,
+                    a_pattern + r"\s*(?:=|и)\s*" + b_pattern + r"\s*(?:[,—–-]\s*)?(?:одно и то же|синонимы|эквивалентны|равнозначны)\b",
+                )
+                for pattern in patterns:
+                    for match in re.finditer(pattern, visible, re.I):
+                        # Do not flag an author explicitly rejecting a false
+                        # synonymy, or presenting it as a known misconception.
+                        prefix = visible[max(0, match.start() - 100):match.start()]
+                        prefix = re.split(r"[.!?\n]", prefix)[-1]
+                        if re.search(r"\b(?:не|нельзя|ошибочн[а-яё]*|неверн[а-яё]*)\b", prefix, re.I):
+                            continue
+                        item = _finding(text, "not_equivalent_terms", *match.span(), "warning", f"Словарь запрещает отождествление {pair[0]} и {pair[1]}. Проверьте явную связку эквивалентности; совместное упоминание терминов допустимо.")
+                        item["glossary_ids"] = list(pair)
+                        findings.append(item)
+    return list({item["id"]: item for item in findings}.values())
+
+
+_GENITIVE_LEXEMES = {
+    "анализа", "оценки", "качества", "метода", "методов", "модели", "моделей",
+    "прогноза", "прогнозов", "системы", "систем", "данных", "результатов",
+    "параметров", "процессов", "атмосферы", "температуры", "скорости", "ветра",
+    "структуры", "поля", "полей", "ряда", "рядов", "свойств", "среды",
+}
+
+
+def _genitive_candidates(text: str, visible: str, protected: list[tuple[int, int]]) -> list[dict[str, Any]]:
+    """Conservative surface heuristic; no grammatical case is asserted."""
+    candidates: list[list[re.Match[str]]] = []
+    chain: list[re.Match[str]] = []
+    for word in re.finditer(r"[А-Яа-яЁё]+", visible):
+        token = word.group().casefold()
+        nominal_like = token in _GENITIVE_LEXEMES or bool(re.search(r"(?:ции|ций|ния|ний|ости|стей|тельности|тельностей)$", token))
+        adjacent = not chain or visible[chain[-1].end():word.start()].isspace()
+        if not nominal_like or not adjacent:
+            if len(chain) >= 4:
+                candidates.append(chain)
+            chain = []
+        if nominal_like:
+            chain.append(word)
+    if len(chain) >= 4:
+        candidates.append(chain)
+    findings = []
+    for chain in candidates:
+        start, end = chain[0].start(), chain[-1].end()
+        if _is_protected(start, end, protected):
+            continue
+        item = _finding(text, "genitive_chain_candidate", start, end, "warning", "Возможная цепочка именных зависимостей из четырёх и более слов: проверьте, понятно ли, что к чему относится. Падежи не разбирались; это поверхностная эвристика, термин можно сохранить.")
+        item["confidence"] = "surface_heuristic"
+        findings.append(item)
+    return findings
+
+
+def _typography_findings(text: str, visible: str, protected: list[tuple[int, int]]) -> list[dict[str, Any]]:
+    findings: list[dict[str, Any]] = []
+    patterns = (
+        ("unit_spacing", r"(?<![\w.,])\d+(?:[.,]\d+)?(?:%|°[CСF]|кг|г|мг|км(?:/ч)?|см|мм|м(?:/с)?|мс|с|ч|Па|гПа|кПа|МПа|К|Вт|кВт|Гц)(?!\w)", "Между числом и обозначением единицы или % обычно нужен пробел; проверьте требования журнала. Угловые градусы без обозначения температуры не затрагиваются."),
+        ("prose_dash", r"(?<=[А-Яа-яЁё])\s+[-–]\s+(?=[А-Яа-яЁё])", "Возможное пунктуационное тире, набранное дефисом/коротким тире. Проверьте контекст и типографику журнала; диапазоны и дефисы внутри слов не исправляются."),
+    )
+    for rule, pattern, message in patterns:
+        for match in re.finditer(pattern, visible):
+            if not _is_protected(*match.span(), protected):
+                findings.append(_finding(text, rule, *match.span(), "warning", message))
+    # Inspect only quotation glyphs, never lint quoted language. Formula/code/
+    # bibliography masking is retained; Russian guillemets are already valid.
+    typography = mask_nonprose(text, mask_quotes=False)
+    for match in re.finditer(r'"[^"\n]*[А-Яа-яЁё][^"\n]*"|“[^”\n]*[А-Яа-яЁё][^”\n]*”', typography):
+        findings.append(_finding(text, "russian_quote_glyphs", *match.span(), "warning", "Для русской внешней цитаты обычно используют «ёлочки». Проверьте вложенность и правила журнала; содержание цитаты не изменяйте."))
+    return findings
+
+
+def check_english_abstract(publication: dict[str, Any], text: str) -> dict[str, Any]:
+    """A deterministic, explicitly limited check of publication.abstract.en."""
+    if not isinstance(publication, dict):
+        raise ValueError("publication must be an object")
+    abstract = publication.get("abstract", {})
+    if not isinstance(abstract, dict):
+        raise ValueError("publication.abstract must be an object")
+    english = abstract.get("en", "")
+    if not isinstance(english, str):
+        raise ValueError("publication.abstract.en must be a string")
+    visible = mask_nonprose(english)
+    findings: list[dict[str, Any]] = []
+    patterns = (
+        ("english_placeholder", _RULES[-1][1], "error", "В английской аннотации осталась служебная пометка."),
+        ("cyrillic_in_english_abstract", r"[А-Яа-яЁё]{3,}(?:\s+[А-Яа-яЁё]{3,})*", "warning", "Кириллица в английской аннотации: проверьте перевод или обоснуйте сохранённое имя/термин."),
+        ("english_repeated_word", r"\b([A-Za-z]{2,})\s+\1\b", "warning", "Повтор соседнего слова: проверьте, не опечатка ли это; грамматически необходимый повтор допустим."),
+    )
+    if english.strip():
+        for rule, pattern, severity, message in patterns:
+            for match in re.finditer(pattern, visible, re.I):
+                findings.append(_finding(english, rule, *match.span(), severity, message, tool="en_abstract_lint"))
+        for start, end in sentence_spans(visible):
+            if len(_WORDS.findall(visible[start:end])) > 45:
+                findings.append(_finding(english, "english_long_sentence", start, end, "warning", "Более 45 слов: проверьте читаемость английской аннотации; это эвристика, не норма журнала.", tool="en_abstract_lint"))
+    for item in findings:
+        item.update(location="publication.abstract.en", offset_basis="publication.abstract.en")
+    findings.sort(key=lambda item: (item["offset"], item["rule"]))
+    return {
+        "tool": "en_abstract_lint", "version": EN_RULESET_VERSION,
+        "execution_status": "completed" if english.strip() else "not_supplied",
+        "disposition": "not_assessed" if not english.strip() else "fail" if any(f["severity"] == "error" for f in findings) else "needs_review" if findings else "pass",
+        "manuscript_sha256": manuscript_sha256(text), "publication_sha256": _json_sha256(publication),
+        "input_sha256": manuscript_sha256(english), "language": "en", "findings": findings,
+        "scope": "basic_local_abstract_checks_only; no complete English grammar or translation equivalence assessment",
+        "location": "publication.abstract.en",
+    }
+
+
+def analyze_text(text: str, *, language: str = "ru", protected_terms: Sequence[str] = (), author_samples: Sequence[str] = (), author_style_mode: str = "author_samples", glossary: dict[str, Any] | None = None) -> dict[str, Any]:
     """Run local RU editorial heuristics and compare descriptive author tempo."""
     visible = mask_nonprose(text)
     protected = _protected_spans(visible, protected_terms)
@@ -270,6 +426,9 @@ def analyze_text(text: str, *, language: str = "ru", protected_terms: Sequence[s
             for match in re.finditer(pattern, visible, re.I):
                 if rule == "placeholder" or not _is_protected(*match.span(), protected):
                     findings.append(_finding(text, rule, *match.span(), severity, message))
+        findings.extend(_genitive_candidates(text, visible, protected))
+        findings.extend(_typography_findings(text, visible, protected))
+        findings.extend(_glossary_findings(text, visible, glossary or {}))
         if not _WORDS.search(visible):
             findings.append(_finding(text, "no_prose", 0, 0, "error", "Не найден проверяемый основной текст."))
         seen_paragraphs: dict[str, int] = {}
@@ -302,6 +461,7 @@ def analyze_text(text: str, *, language: str = "ru", protected_terms: Sequence[s
         ),
         "author_profile": profile_style(author_samples, mode=author_style_mode), "manuscript_tempo": tempo_profile([text]),
         "protected_terms": list(protected_terms),
+        "glossary": glossary or {}, "glossary_sha256": _json_sha256(glossary or {}),
         "origin_detection": "not_performed; editorial signals do not establish AI authorship",
     }
 
@@ -505,13 +665,19 @@ def import_glavred_report(path: str | Path | None, text: str) -> dict[str, Any]:
     return result
 
 
-def run_quality(manuscript: str | Path, *, output_dir: str | Path, language: str = "ru", protected_terms: Sequence[str] = (), author_samples: Sequence[str] = (), author_style_mode: str = "author_samples", languagetool_url: str | None = None, allow_remote: bool = False, timeout: float = 20.0, max_chunk_chars: int = 10000, glavred_report: str | Path | None = None, required_tools: Sequence[str] = DEFAULT_REQUIRED_TOOLS) -> dict[str, Any]:
+def run_quality(manuscript: str | Path, *, output_dir: str | Path, language: str = "ru", protected_terms: Sequence[str] = (), author_samples: Sequence[str] = (), author_style_mode: str = "author_samples", languagetool_url: str | None = None, allow_remote: bool = False, timeout: float = 20.0, max_chunk_chars: int = 10000, glavred_report: str | Path | None = None, required_tools: Sequence[str] = DEFAULT_REQUIRED_TOOLS, execution_profile: str = "strict_local", glossary: dict[str, Any] | None = None, publication: dict[str, Any] | None = None) -> dict[str, Any]:
     """Run stage 5 for a UTF-8 file and persist quality.json plus raw LT data.
 
     ``author_samples`` contains text, not paths. Missing required services keep
     required_complete false. Completion does not close editorial findings or
     replace independent scientific review.
     """
+    if execution_profile not in ("strict_local", "offline_sandbox"):
+        raise ValueError("execution_profile must be strict_local or offline_sandbox")
+    glossary = {} if glossary is None else glossary
+    publication = {} if publication is None else publication
+    if not isinstance(glossary, dict) or not isinstance(publication, dict):
+        raise ValueError("glossary and publication must be objects")
     required = tuple("glavred" if name == "glvrd" else name for name in required_tools)
     unknown = set(required) - {"ru_science_lint", "languagetool", "glavred"}
     if unknown or not required:
@@ -519,51 +685,82 @@ def run_quality(manuscript: str | Path, *, output_dir: str | Path, language: str
     manuscript_path = Path(manuscript)
     # read_bytes/decode preserves CRLF in the hash and offset space.
     text = manuscript_path.read_bytes().decode("utf-8")
-    local = analyze_text(text, language=language, protected_terms=protected_terms, author_samples=author_samples, author_style_mode=author_style_mode)
+    local = analyze_text(text, language=language, protected_terms=protected_terms, author_samples=author_samples, author_style_mode=author_style_mode, glossary=glossary)
     lt = check_languagetool(text, url=languagetool_url, language=language, protected_terms=protected_terms, allow_remote=allow_remote, timeout=timeout, max_chunk_chars=max_chunk_chars)
     glavred = import_glavred_report(glavred_report, text)
-    checks = [local, lt, glavred]
+    english = check_english_abstract(publication, text)
+    if execution_profile == "offline_sandbox":
+        for check, supplied, skip_reason in ((lt, bool(languagetool_url), "no_endpoint_configured"), (glavred, glavred_report is not None, "no_attested_report_supplied")):
+            if not supplied and check["execution_status"] == "not_run":
+                check.update(
+                    execution_status="skipped_no_runtime", request_attempted=False,
+                    skip_reason=skip_reason,
+                    reason="offline_sandbox explicitly selected; " + check["reason"] + " No completed external check is claimed.",
+                )
+    checks = [local, lt, glavred, english]
     for check in checks:
         check["status"] = check["execution_status"]
+        check["execution_profile"] = execution_profile
     by_tool = {check["tool"]: check for check in checks}
     incomplete = [name for name in required if by_tool[name]["execution_status"] != "completed"]
     statuses = {by_tool[name]["execution_status"] for name in incomplete}
-    overall = "completed" if not incomplete else "failed" if "failed" in statuses else "unavailable" if "unavailable" in statuses else "not_run"
+    overall = "completed" if not incomplete else "failed" if "failed" in statuses else "unavailable" if "unavailable" in statuses else "partial" if statuses == {"skipped_no_runtime"} else "not_run"
     findings = [f for check in checks for f in check["findings"]]
     has_errors = any(f["severity"] == "error" for f in findings)
+    draft_complete = not has_errors and local["execution_status"] == "completed" and (
+        not incomplete or execution_profile == "offline_sandbox" and all(
+            name in ("languagetool", "glavred") and by_tool[name]["execution_status"] == "skipped_no_runtime"
+            for name in incomplete
+        )
+    )
     report = {
-        "schema_version": "1.0", "stage": 5,
+        "schema_version": "2.0", "stage": 5, "execution_profile": execution_profile,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "manuscript_sha256": manuscript_sha256(text), "manuscript_path": str(manuscript_path),
         "language": language, "execution_status": overall,
         "required_tools": list(required), "required_complete": not incomplete,
         "missing_required_tools": incomplete, "has_blocking_findings": has_errors,
-        "ready_for_editor_review": not incomplete and not has_errors,
+        "draft_quality_complete": draft_complete,
+        "ready_for_editor_review": draft_complete,
+        "glossary_sha256": _json_sha256(glossary), "publication_sha256": _json_sha256(publication),
+        "scope": {
+            "main_text": "Russian editorial heuristics; grammar only when a supplied provider actually completed",
+            "english_abstract": english["execution_status"] + ": " + english["scope"],
+            "unassessed": ["scientific truth", "translation equivalence", "AI authorship"],
+        },
         "tools": by_tool, "findings": findings,
         "author_profile": local["author_profile"], "manuscript_tempo": local["manuscript_tempo"],
         "editor_review": "pending", "scientific_review": "pending",
         "warnings": (["Обязательные проверки выполнены не полностью."] if incomplete else []) + (
             ["Образцы автора не предоставлены; индивидуальный стиль не заявляется."]
             if local["author_profile"]["status"] == "not_supplied" else []
-        ) + ["Редакторские метрики не устанавливают научность или происхождение текста."],
+        ) + (["Автономный профиль: пропущенные сервисы не выполнены; допускается только выпуск с явно указанными ограничениями, без готовности к подаче."] if execution_profile == "offline_sandbox" else []) + ["Редакторские метрики не устанавливают научность или происхождение текста."],
         "origin_detection": "not_performed; no AI-authorship probability is produced",
     }
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     raw_dir = destination / "raw"
+    if raw_dir.is_symlink():
+        raise ValueError("Raw output directory must not be a symbolic link")
     raw_dir.mkdir(parents=True, exist_ok=True)
     report["raw_artifacts"] = []
     raw_records = [
         (local, dict(local)),
-        (lt, {"tool": "languagetool", "manuscript_sha256": report["manuscript_sha256"], "execution_status": lt["execution_status"], "language": language, "protected_terms": list(protected_terms), "max_chunk_chars": max_chunk_chars, "chunks": lt.pop("raw_chunks")}),
+        (lt, {"tool": "languagetool", "manuscript_sha256": report["manuscript_sha256"], "execution_status": lt["execution_status"], "language": language, "protected_terms": list(protected_terms), "max_chunk_chars": max_chunk_chars, "chunks": lt.pop("raw_chunks"), "execution_profile": execution_profile, **{key: lt[key] for key in ("reason", "skip_reason", "request_attempted") if key in lt}}),
+        (english, {**english, "publication": publication}),
     ]
     if glavred.get("raw_report"):
-        raw_records.append((glavred, {"tool": "glavred", "execution_status": "completed", "version": glavred["version"], "checked_at": glavred["checked_at"], "manuscript_sha256": report["manuscript_sha256"], "attestation": glavred["attestation"], "raw_report": glavred.pop("raw_report")}))
+        raw_records.append((glavred, {"tool": "glavred", "execution_status": "completed", "version": glavred["version"], "checked_at": glavred["checked_at"], "manuscript_sha256": report["manuscript_sha256"], "attestation": glavred["attestation"], "raw_report": glavred.pop("raw_report"), "execution_profile": execution_profile}))
+    else:
+        raw_records.append((glavred, dict(glavred)))
     for check, raw_data in raw_records:
         raw_bytes = (json.dumps(raw_data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         raw_sha = hashlib.sha256(raw_bytes).hexdigest()
         relative = f"raw/{check['tool']}.{raw_sha[:16]}.json"
-        (destination / relative).write_bytes(raw_bytes)
+        raw_path = destination / relative
+        if raw_path.is_symlink() or not raw_path.resolve().is_relative_to(destination.resolve()):
+            raise ValueError("Raw output path must remain within the report directory")
+        raw_path.write_bytes(raw_bytes)
         check["raw_report_path"] = relative
         check["raw_report_sha256"] = raw_sha
         report["raw_artifacts"].append({"tool": check["tool"], "path": relative, "sha256": raw_sha, "manuscript_sha256": report["manuscript_sha256"]})
@@ -580,7 +777,7 @@ def run_quality(manuscript: str | Path, *, output_dir: str | Path, language: str
     return report
 
 
-def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: str) -> list[str]:
+def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: str, *, glossary: dict[str, Any] | None = None, publication: dict[str, Any] | None = None, execution_profile: str | None = None) -> list[str]:
     """Check report consistency against current text and recorded provider data.
 
     This detects incomplete executions and accidental summary tampering. It is
@@ -591,6 +788,17 @@ def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: s
     if not isinstance(report, dict) or not isinstance(report.get("tools"), dict):
         return ["quality: tools должен быть объектом"]
     tools = report["tools"]
+    if set(tools) != {"ru_science_lint", "languagetool", "glavred", "en_abstract_lint"}:
+        errors.append("quality: отсутствует или неизвестен инструмент обязательного формата v2")
+    profile = report.get("execution_profile", "strict_local")
+    if profile not in ("strict_local", "offline_sandbox"):
+        errors.append("quality: неизвестный профиль исполнения")
+    if execution_profile is not None and profile != execution_profile:
+        errors.append("quality: профиль исполнения не соответствует текущему brief")
+    if glossary is not None and report.get("glossary_sha256") != _json_sha256(glossary):
+        errors.append("quality: хеш словаря не соответствует текущему glossary")
+    if publication is not None and report.get("publication_sha256") != _json_sha256(publication):
+        errors.append("quality: хеш издательского блока не соответствует текущему publication")
     raw_items = report.get("raw_artifacts")
     if not isinstance(raw_items, list):
         return ["quality: raw_artifacts должен быть массивом"]
@@ -632,6 +840,8 @@ def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: s
                 errors.append(f"{name}: имя инструмента внутри raw не совпадает")
             if data.get("execution_status") != execution.get("execution_status"):
                 errors.append(f"{name}: сырой статус расходится со сводным")
+            if data.get("execution_profile") != profile or execution.get("execution_profile") != profile:
+                errors.append(f"{name}: профиль исполнения raw/summary расходится с quality")
             by_tool[name] = (data, path)
         except (OSError, ValueError, UnicodeError) as exc:
             errors.append(f"{name}: исходный отчёт недоступен/некорректен ({type(exc).__name__})")
@@ -651,6 +861,45 @@ def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: s
             errors.append(f"{name}: findings должен содержать объекты с id")
             continue
         expected_findings.extend(findings)
+        state = execution.get("execution_status")
+        if state == "skipped_no_runtime":
+            if profile != "offline_sandbox" or name not in ("languagetool", "glavred"):
+                errors.append(f"{name}: skipped_no_runtime допустим только для внешнего сервиса в offline_sandbox")
+            if name not in by_tool:
+                errors.append(f"{name}: пропуск должен иметь исходную квитанцию")
+            else:
+                raw, _ = by_tool[name]
+                expected_reason = "no_endpoint_configured" if name == "languagetool" else "no_attested_report_supplied"
+                if raw.get("skip_reason") != expected_reason or execution.get("skip_reason") != expected_reason:
+                    errors.append(f"{name}: не указан допустимый факт отсутствия конфигурации/отчёта")
+                if raw.get("request_attempted") is not False or execution.get("request_attempted") is not False:
+                    errors.append(f"{name}: пропуск не должен выдавать попытку запуска за отсутствие среды")
+                if not isinstance(raw.get("reason"), str) or not raw["reason"].strip() or execution.get("reason") != raw.get("reason"):
+                    errors.append(f"{name}: причина пропуска отсутствует или изменена")
+                if raw.get("chunks") or raw.get("raw_report") or raw.get("attestation"):
+                    errors.append(f"{name}: пропуск не может содержать заявленный результат сервиса")
+            if findings or execution.get("disposition") != "not_assessed" or execution.get("completed_chunks", 0) != 0:
+                errors.append(f"{name}: пропущенная проверка не имеет выполненных результатов")
+        if name == "en_abstract_lint":
+            if name not in by_tool:
+                errors.append("en_abstract_lint: нет raw с проверяемым издательским блоком")
+                continue
+            raw, _ = by_tool[name]
+            try:
+                recorded_publication = raw.get("publication")
+                if not isinstance(recorded_publication, dict):
+                    raise ValueError("publication must be an object")
+                current_en = check_english_abstract(recorded_publication, text)
+                if report.get("publication_sha256") != current_en["publication_sha256"]:
+                    errors.append("en_abstract_lint: хеш publication расходится с quality")
+                if publication is not None and recorded_publication != publication:
+                    errors.append("en_abstract_lint: проверялся другой издательский блок")
+                for key in ("version", "execution_status", "disposition", "findings", "input_sha256", "publication_sha256", "scope", "location"):
+                    if raw.get(key) != current_en[key] or execution.get(key) != current_en[key]:
+                        errors.append(f"en_abstract_lint: {key} не соответствует фактическому входу")
+            except (TypeError, ValueError, KeyError) as exc:
+                errors.append(f"en_abstract_lint: недействительный raw ({exc})")
+            continue
         if execution.get("execution_status") != "completed":
             continue
         if name not in by_tool:
@@ -665,7 +914,14 @@ def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: s
                 terms = raw.get("protected_terms")
                 if not isinstance(terms, list) or any(not isinstance(term, str) for term in terms):
                     raise ValueError("protected_terms must be an array of strings")
-                current = analyze_text(text, language=raw.get("language", "ru"), protected_terms=terms)
+                recorded_glossary = raw.get("glossary", {})
+                if not isinstance(recorded_glossary, dict):
+                    raise ValueError("glossary must be an object")
+                current = analyze_text(text, language=raw.get("language", "ru"), protected_terms=terms, glossary=recorded_glossary)
+                if glossary is not None and recorded_glossary != glossary:
+                    errors.append("ru_science_lint: проверялся другой словарь")
+                if execution.get("glossary") != recorded_glossary or raw.get("glossary_sha256") != current["glossary_sha256"] or execution.get("glossary_sha256") != current["glossary_sha256"] or report.get("glossary_sha256") != current["glossary_sha256"]:
+                    errors.append("ru_science_lint: словарь raw/summary не соответствует хешам")
                 if raw.get("version") != RULESET_VERSION or execution.get("version") != RULESET_VERSION:
                     errors.append("ru_science_lint: изменились правила; запустите проверку заново")
                 if execution.get("protected_terms") != terms or execution.get("language") != raw.get("language"):
@@ -754,4 +1010,20 @@ def verify_raw_artifacts(report: dict[str, Any], output_dir: str | Path, text: s
     actual_blockers = any(f.get("severity") == "error" for f in expected_findings)
     if report.get("has_blocking_findings") is not actual_blockers:
         errors.append("quality: has_blocking_findings расходится с фактическими находками")
+    required = report.get("required_tools")
+    if not isinstance(required, list) or not required or any(not isinstance(name, str) for name in required) or len(set(required)) != len(required) or any(name not in ("ru_science_lint", "languagetool", "glavred") for name in required):
+        errors.append("quality: неверный список обязательных инструментов")
+    else:
+        incomplete = [name for name in required if not isinstance(tools.get(name), dict) or tools[name].get("execution_status") != "completed"]
+        if report.get("required_complete") is not (not incomplete) or report.get("missing_required_tools") != incomplete:
+            errors.append("quality: итог обязательных проверок расходится с реальными статусами")
+        local_complete = isinstance(tools.get("ru_science_lint"), dict) and tools["ru_science_lint"].get("execution_status") == "completed"
+        draft_complete = not actual_blockers and local_complete and (
+            not incomplete or profile == "offline_sandbox" and all(
+                name in ("languagetool", "glavred") and isinstance(tools.get(name), dict) and tools[name].get("execution_status") == "skipped_no_runtime"
+                for name in incomplete
+            )
+        )
+        if report.get("draft_quality_complete") is not draft_complete or report.get("ready_for_editor_review") is not draft_complete:
+            errors.append("quality: черновой допуск расходится с фактическими проверками")
     return list(dict.fromkeys(errors))

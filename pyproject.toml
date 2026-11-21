@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-sci-writer-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Evidence-grounded scientific writing agents with Russian scholarly terminology and review gates"
 requires-python = ">=3.11"
 dependencies = ["jsonschema>=4.23,<5"]
 
+[project.optional-dependencies]
+publishing = ["python-docx>=1.2,<2"]
+mcp = ["mcp>=1.28,<3"]
+
 [project.scripts]
 sci-writer = "sci_writer.cli:main"
+sci-writer-mcp = "sci_writer.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

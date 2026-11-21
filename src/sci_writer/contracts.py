@@ -407,6 +407,8 @@ def validate_review(run: Path, filename: str, role: str, brief: dict) -> tuple[d
         return report, errors
     if report["reviewer_role"] != role:
         errors.append(f"{filename}: неверная роль рецензента")
+    if "independent_peer_review" in report and report["independent_peer_review"] is not (brief["review_mode"] == "independent_sessions"):
+        errors.append(f"{filename}: independent_peer_review противоречит фактическому режиму")
     if report["manuscript_sha256"] != sha256(run / "manuscript.md"):
         errors.append(f"{filename}: рецензия относится к другой версии рукописи")
     if report.get("review_context_sha256") != review_context(run, chief=role == "chief-reviewer"):
@@ -416,10 +418,18 @@ def validate_review(run: Path, filename: str, role: str, brief: dict) -> tuple[d
     if editorial_path.exists():
         editorial = read_json(editorial_path)
         writer_ids.add(str(editorial.get("editor_id", "")).strip().casefold())
-    if report["reviewer_id"].strip().casefold() in writer_ids or not report["independent_of_author"]:
-        errors.append(f"{filename}: требуется рецензент, независимый от авторов")
-    if brief["review_mode"] != "independent_sessions":
-        errors.append("Самопроверка в одном сеансе не заменяет независимую рецензию")
+    if brief["review_mode"] == "independent_sessions":
+        if report["reviewer_id"].strip().casefold() in writer_ids or not report["independent_of_author"]:
+            errors.append(f"{filename}: требуется рецензент, независимый от авторов")
+        if report.get("review_mode", "independent_sessions") != "independent_sessions":
+            errors.append(f"{filename}: самопроверка не является независимой рецензией")
+    else:
+        if report["independent_of_author"] or report.get("independent_peer_review") is True:
+            errors.append(f"{filename}: самопроверку нельзя объявлять независимой рецензией")
+        if report.get("review_mode") != "single_session_self_audit":
+            errors.append(f"{filename}: явно укажите review_mode=single_session_self_audit")
+        if report["reviewer_id"].strip().casefold() not in writer_ids:
+            errors.append(f"{filename}: используйте реальный ID писателя/редактора для самопроверки")
     if report["decision"] not in ("accept", "minor_revision"):
         errors.append(f"{filename}: решение {report['decision']} требует доработки")
     issue_ids = set()

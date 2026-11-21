@@ -1,0 +1,9 @@
+---
+description: Scientific article workflow and evidence contracts for this repository
+alwaysApply: true
+---
+
+Read the repository root `AGENTS.md`, then `agents/00-orchestrator.md`.
+Use `config/workflow.json` and `sci-writer next` to load only the current skill and its required artifacts.
+Keep historical `research-archive/` out of ordinary article context.
+Use the actual CLI/MCP execution profile; independent review needs real independent sessions.

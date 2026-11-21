@@ -3,7 +3,7 @@
   "type": "object",
   "required": ["schema_version", "run_id", "topic", "language", "article_type", "research_questions", "empirical_required", "study_mode", "writer_ids", "review_mode", "author_style", "quality"],
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"enum": ["1.0", "2.0"]},
     "run_id": {"type": "string", "minLength": 1},
     "topic": {"type": "string", "minLength": 3},
     "language": {"enum": ["ru", "ru-RU"]},
@@ -12,7 +12,10 @@
     "empirical_required": {"type": "boolean"},
     "study_mode": {"enum": ["exploratory", "confirmatory", "not_applicable"]},
     "writer_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
-    "review_mode": {"enum": ["independent_sessions", "single_session"]},
+    "execution_profile": {"enum": ["strict_local", "offline_sandbox"], "default": "strict_local"},
+    "review_mode": {"enum": ["independent_sessions", "single_session_self_audit", "single_session"]},
+    "publication": {"type": "object", "description": "Validated separately with publication.schema.json; journal-required fields apply only at submission gate."},
+    "external_processing_authorized": {"type": "boolean"},
     "author_style": {"type": "object", "required": ["sample_paths", "samples_requested"], "properties": {"sample_paths": {"type": "array", "items": {"type": "string"}}, "samples_requested": {"type": "boolean"}}},
     "quality": {"type": "object", "required": ["required_tools"], "properties": {"required_tools": {"type": "array", "minItems": 2, "items": {"enum": ["ru_science_lint", "languagetool", "glavred"]}, "uniqueItems": true}}}
   }

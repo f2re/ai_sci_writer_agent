@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Optional journal publication metadata",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "abstract": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "funding": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "author_contributions": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "conflicts": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "acknowledgements": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "string",
+          "minLength": 1
+        },
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "keywords": {
+      "type": "object",
+      "properties": {
+        "ru": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "en": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name_ru"
+        ],
+        "properties": {
+          "name_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name_en": {
+            "type": "string",
+            "minLength": 1
+          },
+          "affiliation_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "orcid": {
+            "type": "string",
+            "pattern": "^(https://orcid\\.org/)?\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$"
+          },
+          "spin": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{4}$"
+          },
+          "email": {
+            "type": "string",
+            "minLength": 3
+          },
+          "corresponding": {
+            "type": "boolean"
+          },
+          "degree_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "degree_en": {
+            "type": "string",
+            "minLength": 1
+          },
+          "academic_title_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "academic_title_en": {
+            "type": "string",
+            "minLength": 1
+          },
+          "contribution_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "contribution_en": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "affiliations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name_ru"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "name_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name_en": {
+            "type": "string",
+            "minLength": 1
+          },
+          "city_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "city_en": {
+            "type": "string",
+            "minLength": 1
+          },
+          "country_ru": {
+            "type": "string",
+            "minLength": 1
+          },
+          "country_en": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "udc": {
+      "type": "string",
+      "minLength": 1
+    },
+    "grnti": {
+      "type": "string",
+      "minLength": 1
+    },
+    "edn": {
+      "type": "string",
+      "minLength": 1
+    },
+    "doi": {
+      "type": "string",
+      "minLength": 1
+    },
+    "citation_style": {
+      "enum": [
+        "gost-r-7.0.5-2008",
+        "numeric"
+      ]
+    },
+    "reference_overrides": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^S[0-9]{3,}$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 10
+      }
+    }
+  },
+  "additionalProperties": false
+}

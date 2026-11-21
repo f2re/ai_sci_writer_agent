@@ -1,33 +1,181 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Report of a real externally executed check; self-attestation is not cryptographic proof",
+  "title": "External check result or an explicit non-execution receipt; never an AI-authorship score",
   "type": "object",
-  "required": ["tool", "status", "manuscript_sha256", "checked_at", "version", "attestation", "raw_report"],
+  "required": [
+    "tool",
+    "status",
+    "manuscript_sha256",
+    "checked_at"
+  ],
   "properties": {
-    "tool": {"type": "string"},
-    "status": {"enum": ["completed", "not_run", "unavailable", "failed"]},
-    "manuscript_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-    "checked_at": {"type": "string", "format": "date-time"},
-    "version": {"type": "string", "minLength": 1, "description": "Actual tool version, or not_reported if the service UI does not expose it"},
+    "tool": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "completed",
+        "not_run",
+        "unavailable",
+        "failed",
+        "skipped_no_runtime"
+      ]
+    },
+    "manuscript_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "checked_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Actual tool version, or not_reported if the service UI does not expose it"
+    },
     "attestation": {
       "type": "object",
-      "required": ["performed_by", "method", "actual_run", "statement"],
+      "required": [
+        "performed_by",
+        "method",
+        "actual_run",
+        "statement"
+      ],
       "properties": {
-        "performed_by": {"type": "string", "minLength": 1},
-        "method": {"enum": ["manual_ui", "official_api"]},
-        "actual_run": {"const": true},
-        "statement": {"type": "string", "minLength": 10}
+        "performed_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "enum": [
+            "manual_ui",
+            "official_api"
+          ]
+        },
+        "actual_run": {
+          "const": true
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 10
+        }
       },
       "additionalProperties": false
     },
-    "findings": {"type": "array"},
+    "findings": {
+      "type": "array"
+    },
     "raw_report": {
       "anyOf": [
-        {"type": "string", "minLength": 1},
-        {"type": "object", "minProperties": 1},
-        {"type": "array", "minItems": 1}
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "minProperties": 1
+        },
+        {
+          "type": "array",
+          "minItems": 1
+        }
       ],
       "description": "Actual provider output or verbatim manual export; never an invented score"
+    },
+    "execution_profile": {
+      "enum": [
+        "strict_local",
+        "offline_sandbox"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 10
+    },
+    "skip_reason": {
+      "enum": [
+        "no_endpoint_configured",
+        "no_attested_report_supplied"
+      ]
+    },
+    "request_attempted": {
+      "type": "boolean"
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "completed"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "version",
+          "attestation",
+          "raw_report"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "skipped_no_runtime"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "execution_profile",
+          "reason",
+          "skip_reason",
+          "request_attempted"
+        ],
+        "properties": {
+          "execution_profile": {
+            "const": "offline_sandbox"
+          },
+          "request_attempted": {
+            "const": false
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "attestation"
+              ]
+            },
+            {
+              "required": [
+                "raw_report"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "not_run",
+              "unavailable",
+              "failed"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "reason"
+        ]
+      }
+    }
+  ]
 }

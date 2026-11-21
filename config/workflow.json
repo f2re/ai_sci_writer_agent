@@ -1,49 +1,99 @@
 {
-  "version": "1.0.0",
-  "coordinator": "agents/00-coordinator.md",
+  "version": "2.0.0",
+  "coordinator": "agents/00-orchestrator.md",
   "stages": [
     {
       "id": "01_intake",
       "title": "Задание, журнал и авторский профиль",
-      "agents": ["agents/01-intake-venue.md", "agents/06-author-style.md"],
-      "outputs": ["brief.json", "journal-profile.json", "style-profile.json"]
+      "agents": [
+        "skills/brief-venue-style/SKILL.md"
+      ],
+      "outputs": [
+        "brief.json",
+        "journal-profile.json",
+        "style-profile.json"
+      ]
     },
     {
       "id": "02_research",
       "title": "Российская научная школа, литература и тезаурус",
-      "agents": ["agents/02-russian-school.md", "agents/03-global-librarian.md", "agents/05-terminologist.md"],
-      "outputs": ["sources.jsonl", "search-log.jsonl", "school-map.md", "literature-review.md", "glossary.json"]
+      "agents": [
+        "skills/russian-school/SKILL.md",
+        "skills/global-literature/SKILL.md",
+        "skills/evidence-terminology/SKILL.md"
+      ],
+      "outputs": [
+        "sources.jsonl",
+        "search-log.jsonl",
+        "school-map.md",
+        "literature-review.md",
+        "glossary.json"
+      ]
     },
     {
       "id": "03_design",
       "title": "Доказательства, методы и план аргументации",
-      "agents": ["agents/04-evidence-auditor.md", "agents/07-methods-analyst.md", "agents/08-argument-architect.md"],
-      "outputs": ["evidence.jsonl", "research-plan.md", "analysis/analysis-plan.md", "analysis/data-manifest.json", "analysis/results.json", "outline.md", "reports/source-audit.json"]
+      "agents": [
+        "skills/evidence-terminology/SKILL.md",
+        "skills/methods-architecture/SKILL.md"
+      ],
+      "outputs": [
+        "evidence.jsonl",
+        "research-plan.md",
+        "analysis/analysis-plan.md",
+        "analysis/data-manifest.json",
+        "analysis/results.json",
+        "outline.md",
+        "reports/source-audit.json"
+      ]
     },
     {
       "id": "04_draft",
       "title": "Рукопись по проверенным утверждениям",
-      "agents": ["agents/09-manuscript-writer.md"],
-      "outputs": ["manuscript.md"]
+      "agents": [
+        "skills/manuscript-writer/SKILL.md"
+      ],
+      "outputs": [
+        "manuscript.md"
+      ]
     },
     {
       "id": "05_quality",
       "title": "Вычитка и реальные проверки стиля и нейрослопа",
-      "agents": ["agents/10-language-editor.md", "agents/11-quality-operator.md"],
-      "outputs": ["reports/quality.json", "reports/editorial-review.json"]
+      "agents": [
+        "skills/editor-quality/SKILL.md"
+      ],
+      "outputs": [
+        "reports/quality.json",
+        "reports/editorial-review.json"
+      ]
     },
     {
       "id": "06_review",
       "title": "Независимые предметная и методологическая рецензии",
-      "agents": ["agents/12-domain-reviewer.md", "agents/13-methods-reviewer.md"],
-      "outputs": ["reports/domain-review.json", "reports/methods-review.json", "revision-log.md"]
+      "agents": [
+        "skills/independent-review/SKILL.md",
+        "skills/independent-review/references/domain.md",
+        "skills/independent-review/references/methods.md"
+      ],
+      "outputs": [
+        "reports/domain-review.json",
+        "reports/methods-review.json",
+        "revision-log.md"
+      ]
     },
     {
       "id": "07_release",
       "title": "Заключительная рецензия и комплект статьи",
-      "agents": ["agents/14-chief-reviewer.md"],
-      "outputs": ["reports/final-review.json", "reports/final-review.md"]
+      "agents": [
+        "skills/independent-review/SKILL.md",
+        "skills/independent-review/references/chief.md"
+      ],
+      "outputs": [
+        "reports/final-review.json",
+        "reports/final-review.md"
+      ]
     }
-  ]
+  ],
+  "contract_version": "2.0"
 }
-

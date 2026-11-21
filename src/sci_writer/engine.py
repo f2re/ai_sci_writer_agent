@@ -5,6 +5,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -34,14 +36,53 @@ def stage_by_id(identity: str) -> dict:
 
 
 def policy_hash() -> str:
+    """Invalidate work for executable contracts, not editorial prompt revisions.
+
+    Breaking gate behavior changes require a config.contract_version bump. Prompt
+    and implementation bytes remain separately recorded for reproducibility.
+    """
     digest = hashlib.sha256()
-    paths = [ROOT / "AGENTS.md"]
-    for folder, pattern in (("agents", "*.md"), ("schemas", "*.json"), ("config", "*.json"), ("src/sci_writer", "*.py")):
+    paths = []
+    for folder, pattern in (("schemas", "*.json"), ("config", "*.json")):
         paths.extend((ROOT / folder).rglob(pattern))
     for path in sorted(paths):
         digest.update(str(path.relative_to(ROOT)).encode())
         digest.update((sha256(path) if path.is_file() else "MISSING").encode())
     return digest.hexdigest()
+
+
+def provenance_hashes() -> dict:
+    """Record the instructions/runtime used without treating copy edits as gates."""
+    result = {}
+    for name, paths in (
+        ("instructions_sha256", [ROOT / "AGENTS.md", *(ROOT / "agents").rglob("*.md"), *(ROOT / "skills").rglob("*.md")]),
+        ("implementation_sha256", list((ROOT / "src/sci_writer").glob("*.py"))),
+    ):
+        digest = hashlib.sha256()
+        for path in sorted(paths):
+            digest.update(str(path.relative_to(ROOT)).encode())
+            digest.update((sha256(path) if path.is_file() else "MISSING").encode())
+        result[name] = digest.hexdigest()
+    return result
+
+
+def readiness_requirements(brief: dict) -> dict:
+    """Describe the ceiling imposed by execution conditions, never an approval."""
+    profile = brief.get("execution_profile", "strict_local")
+    mode = brief.get("review_mode", "independent_sessions")
+    limitations = []
+    if profile == "offline_sandbox":
+        limitations.append("offline_quality")
+    independent = mode == "independent_sessions"
+    if not independent:
+        limitations.append("self_audit")
+    return {
+        "execution_profile": profile, "review_mode": mode,
+        "independent_peer_review": independent,
+        "full_readiness_eligible": not limitations,
+        "required_limitation_codes": limitations,
+        "meaning": "Policy ceiling only; substantive reviews and all evidence gates remain required.",
+    }
 
 
 def artifact_hash(run: Path, names: list[str]) -> str:
@@ -65,7 +106,7 @@ def artifact_hash(run: Path, names: list[str]) -> str:
 
 
 def _state(run: Path) -> dict:
-    path = run / ".workflow/state.json"
+    path = safe_path(run, ".workflow/state.json")
     if not path.exists():
         raise ContractError("Запуск не инициализирован: выполните sci-writer init")
     data = read_json(path)
@@ -76,7 +117,7 @@ def _state(run: Path) -> dict:
 
 @contextmanager
 def state_lock(run: Path) -> Iterator[None]:
-    lock = run / ".workflow/lock"
+    lock = safe_path(run, ".workflow/lock")
     try:
         descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     except FileExistsError as exc:
@@ -89,21 +130,31 @@ def state_lock(run: Path) -> Iterator[None]:
         lock.unlink(missing_ok=True)
 
 
-def init_run(run: Path, topic: str, article_type: str = "review", language: str = "ru") -> dict:
+def init_run(run: Path, topic: str, article_type: str = "review", language: str = "ru", *,
+             execution_profile: str = "strict_local", review_mode: str = "independent_sessions") -> dict:
+    if execution_profile not in ("strict_local", "offline_sandbox"):
+        raise ContractError("execution_profile: ожидается strict_local или offline_sandbox")
+    if review_mode not in ("independent_sessions", "single_session_self_audit", "single_session"):
+        raise ContractError("review_mode: неизвестный режим рецензирования")
+    if language not in ("ru", "ru-RU") or article_type not in ("review", "original", "theoretical", "protocol", "methods"):
+        raise ContractError("Неподдерживаемые язык или тип статьи")
+    if not isinstance(topic, str) or len(topic.strip()) < 3:
+        raise ContractError("Нужна содержательная тема запуска")
     run = run.resolve()
     if run.exists() and any(run.iterdir()):
         raise ContractError("Каталог запуска не пуст; существующие материалы не перезаписаны")
     run.mkdir(parents=True, exist_ok=True)
     brief = {
-        "schema_version": "1.0", "run_id": run.name, "topic": topic,
+        "schema_version": "2.0", "run_id": run.name, "topic": topic,
         "language": language, "article_type": article_type,
         "research_questions": [], "empirical_required": article_type == "original",
         "study_mode": "exploratory" if article_type == "original" else "not_applicable",
-        "writer_ids": ["writer-session-01"], "review_mode": "independent_sessions",
+        "writer_ids": ["writer-session-01"], "review_mode": review_mode,
+        "execution_profile": execution_profile, "publication": {},
         "author_style": {"sample_paths": [], "samples_requested": False},
         "quality": {"required_tools": ["ru_science_lint", "languagetool"]},
         "external_processing_authorized": False,
-        "assumptions": ["МБД понимаются как международные базы данных; уточнить при другом значении."],
+        "assumptions": [],
         "open_questions": [],
     }
     artifacts = {
@@ -141,8 +192,8 @@ def init_run(run: Path, topic: str, article_type: str = "review", language: str 
     }
     for name, title in documents.items():
         write_text(safe_path(run, name), f"# {title}\n\n[TODO: заполнить на соответствующем этапе]\n")
-    write_json(run / ".workflow/state.json", {"version": "1.0", "created_at": now(), "completed": {}, "history": []})
-    return {"run": str(run), "next_stage": "01_intake", "status": "initialized", "topic": topic}
+    write_json(run / ".workflow/state.json", {"version": "2.0", "created_at": now(), "completed": {}, "history": []})
+    return {"run": str(run), "next_stage": "01_intake", "status": "initialized", "topic": topic, **readiness_requirements(brief)}
 
 
 def status(run: Path) -> list[dict]:
@@ -174,7 +225,7 @@ def next_task(run: Path) -> dict:
     task = (
         f"# {stage['id']}: {stage['title']}\n\n"
         f"Каталог запуска: `{run.resolve()}`.\n\n"
-        "Прочитайте AGENTS.md и agents/00-coordinator.md в репозитории. "
+        f"Прочитайте AGENTS.md и {workflow()['coordinator']} в репозитории. "
         "Исполняйте следующие роли в отдельных сеансах, где требуется независимость. "
         "Этот файл задаёт работу агенту; CLI не вызывает языковую модель.\n\n"
         + "\n".join(f"- `{path}`" for path in stage["agents"])
@@ -187,7 +238,8 @@ def next_task(run: Path) -> dict:
     )
     path = safe_path(run, ".workflow/tasks/" + stage["id"] + ".md")
     write_text(path, task)
-    return {**pending, "agents": stage["agents"], "outputs": stage["outputs"], "task_file": str(path), "task": task}
+    return {**pending, "agents": stage["agents"], "outputs": stage["outputs"], "task_file": str(path), "task": task,
+            "readiness_requirements": readiness_requirements(read_json(run / "brief.json"))}
 
 
 def _documents_ready(run: Path, paths: list[str]) -> list[str]:
@@ -208,6 +260,8 @@ def _intake_errors(run: Path, brief: dict) -> list[str]:
     errors = schema_errors(brief, "brief")
     if errors:
         return errors
+    from .publishing import publication_errors
+    errors.extend(publication_errors(brief.get("publication", {})))
     required = brief["quality"]["required_tools"]
     if "ru_science_lint" not in required or not any(x in required for x in ("languagetool", "glavred")):
         errors.append("Этап 5 требует локальный lint и как минимум одну реальную сервисную проверку")
@@ -259,16 +313,24 @@ def _quality_errors(run: Path, brief: dict) -> list[str]:
         errors.append("Изменились профиль автора, термины или настройки; повторите quality")
     if editorial.get("quality_report_sha256") != sha256(run / "reports/quality.json"):
         errors.append("Редакторский разбор относится к другому отчёту quality")
-    if not report.get("required_complete"):
-        errors.append("Не все обязательные инструменты реально завершили проверку")
+    profile = brief.get("execution_profile", "strict_local")
+    offline = profile == "offline_sandbox"
+    if report.get("execution_profile", "strict_local") != profile:
+        errors.append("quality: профиль исполнения не соответствует brief")
+    if not report.get("required_complete") and not (offline and report.get("draft_quality_complete")):
+        errors.append("Не все обязательные инструменты завершили проверку или допустимый автономный проход")
     tools = report.get("tools", {})
     for name in brief["quality"]["required_tools"]:
         execution = tools.get(name, {}) if isinstance(tools, dict) else {}
-        if execution.get("status") != "completed":
+        skipped = offline and name != "ru_science_lint" and execution.get("status") == "skipped_no_runtime"
+        if execution.get("status") != "completed" and not skipped:
             errors.append(f"{name}: status должен быть completed, сейчас {execution.get('status', 'missing')}")
     if report.get("has_blocking_findings"):
         errors.append("Инструментальная проверка содержит блокирующие замечания")
-    errors.extend(verify_raw_artifacts(report, run / "reports", (run / "manuscript.md").read_bytes().decode("utf-8")))
+    errors.extend(verify_raw_artifacts(
+        report, run / "reports", (run / "manuscript.md").read_bytes().decode("utf-8"),
+        glossary=read_json(run / "glossary.json"), publication=brief.get("publication", {}), execution_profile=profile,
+    ))
     raw = report.get("raw_artifacts", [])
     for item in raw:
         if not isinstance(item, dict) or not item.get("path"):
@@ -355,16 +417,32 @@ def validate_stage(run: Path, identity: str) -> list[str]:
         errors.extend(found)
         methods, found = validate_review(run, "methods-review.json", "methods-reviewer", brief)
         errors.extend(found)
-        if str(domain.get("reviewer_id", "")).strip().casefold() == str(methods.get("reviewer_id", "")).strip().casefold():
+        independence = brief["review_mode"] == "independent_sessions"
+        if independence and str(domain.get("reviewer_id", "")).strip().casefold() == str(methods.get("reviewer_id", "")).strip().casefold():
             errors.append("Две независимые рецензии требуют разных reviewer_id")
         if stage["id"] == "06_review" or errors:
             return errors
         final, found = validate_review(run, "final-review.json", "chief-reviewer", brief)
         errors.extend(found)
-        if str(final.get("reviewer_id", "")).strip().casefold() in {str(domain.get("reviewer_id", "")).strip().casefold(), str(methods.get("reviewer_id", "")).strip().casefold()}:
+        if independence and str(final.get("reviewer_id", "")).strip().casefold() in {str(domain.get("reviewer_id", "")).strip().casefold(), str(methods.get("reviewer_id", "")).strip().casefold()}:
             errors.append("Главный рецензент должен быть отдельным агентом")
-        if final.get("scientific_ready") is not True:
+        ceiling = readiness_requirements(brief)
+        limited = not ceiling["full_readiness_eligible"]
+        if limited:
+            if final.get("scientific_ready") is not False or final.get("ready_for_submission") is not False:
+                errors.append("Автономный режим или самопроверка допускают reviewed_manuscript с scientific_ready=false и ready_for_submission=false")
+            if final.get("independent_peer_review") is not independence:
+                errors.append("Итоговый отчёт должен честно указать independent_peer_review")
+            if not final.get("limitations") or not all(isinstance(x, str) and len(x.strip()) >= 10 for x in final.get("limitations", [])):
+                errors.append("Ограниченному выпуску нужны содержательные limitations")
+            if set(ceiling["required_limitation_codes"]) != set(final.get("limitation_codes", [])):
+                errors.append("limitation_codes должны соответствовать фактическим ограничениям: " + ", ".join(ceiling["required_limitation_codes"]))
+        elif final.get("scientific_ready") is not True:
             errors.append("Главный рецензент не подтвердил научную готовность")
+        if not limited and final.get("limitation_codes"):
+            errors.append("limitation_codes противоречат полному режиму проверки")
+        if "independent_peer_review" in final and final["independent_peer_review"] is not independence:
+            errors.append("independent_peer_review не соответствует фактическому режиму рецензирования")
         if not isinstance(final.get("ready_for_submission"), bool) or not isinstance(final.get("limitations"), list):
             errors.append("Итоговая рецензия требует ready_for_submission и limitations")
         scores = final.get("scores", {})
@@ -380,11 +458,15 @@ def validate_stage(run: Path, identity: str) -> list[str]:
         if journal.get("status") != "verified" and scores.get("journal_fit", {}).get("score") is not None:
             errors.append("Без проверенного профиля журнала journal_fit остаётся N/A")
         if final.get("ready_for_submission"):
+            if limited:
+                errors.append("Готовность к подаче требует strict_local и independent_sessions")
             journal = read_json(run / "journal-profile.json")
             if journal.get("status") != "verified" or not journal.get("format_checked") or not journal.get("ai_policy"):
                 errors.append("Подача требует проверенных правил журнала, формата и AI policy")
             if any(i.get("status") == "open" for r in (domain, methods, final) for i in r.get("issues", [])):
                 errors.append("Готовность к подаче невозможна при открытых замечаниях")
+            from .publishing import publication_errors
+            errors.extend(publication_errors(brief.get("publication", {}), journal.get("publication_required_fields", [])))
         return errors
     except (ContractError, OSError, UnicodeError, TypeError, KeyError, AttributeError) as exc:
         return errors + [str(exc)]
@@ -412,27 +494,31 @@ def complete(run: Path, identity: str, actor: str) -> dict:
             brief = read_json(run / "brief.json")
             if actor.strip().casefold() not in {str(x).strip().casefold() for x in brief.get("writer_ids", [])}:
                 errors.append("Исполнитель 04_draft должен быть зарегистрирован в brief.writer_ids")
+        if stage["id"] == "07_release":
+            final = read_json(run / "reports/final-review.json")
+            if actor.strip().casefold() != str(final.get("reviewer_id", "")).strip().casefold():
+                errors.append("Последний этап закрывает фактический главный рецензент или автор итоговой самопроверки")
         if errors:
             raise ContractError("\n".join(errors))
         state = _state(run)
         upstream = policy_hash()
         for previous in stage_list[:position]:
             upstream = hashlib.sha256((upstream + previous["id"] + artifact_hash(run, previous["outputs"])).encode()).hexdigest()
-        state["completed"][stage["id"]] = {"at": now(), "actor": actor, "input_hash": upstream, "output_hash": artifact_hash(run, stage["outputs"])}
+        state["completed"][stage["id"]] = {"at": now(), "actor": actor, "input_hash": upstream, "output_hash": artifact_hash(run, stage["outputs"]), **provenance_hashes()}
         invalidated = []
         for downstream in stage_list[position + 1:]:
             if state["completed"].pop(downstream["id"], None) is not None:
                 invalidated.append(downstream["id"])
         state["history"].append({"at": now(), "stage": stage["id"], "actor": actor, "invalidated": invalidated})
-        write_json(run / ".workflow/state.json", state)
+        write_json(safe_path(run, ".workflow/state.json"), state)
         return {"stage": stage["id"], "status": "complete", "invalidated": invalidated}
 
 
 def freeze_plan(run: Path) -> dict:
-    path = run / "analysis/analysis-plan.md"
+    path = safe_path(run, "analysis/analysis-plan.md")
     if _documents_ready(run, ["analysis/analysis-plan.md"]):
         raise ContractError("Сначала заполните план анализа")
-    target = run / "analysis/plan-freeze.json"
+    target = safe_path(run, "analysis/plan-freeze.json")
     record = {"analysis_plan_sha256": sha256(path), "frozen_at": now(), "meaning": "local_timestamp_only_not_external_preregistration"}
     if target.exists():
         previous = read_json(target)
@@ -444,6 +530,7 @@ def freeze_plan(run: Path) -> dict:
 
 
 def _render_manuscript(run: Path) -> tuple[str, list[dict], dict]:
+    from .publishing import format_reference, publication_header
     sources, source_errors = validate_sources(run)
     claims, errors = validate_evidence(run, sources)
     if source_errors or errors:
@@ -451,6 +538,7 @@ def _render_manuscript(run: Path) -> tuple[str, list[dict], dict]:
     text = (run / "manuscript.md").read_text(encoding="utf-8")
     ordered: list[str] = []
     mapping: dict = {}
+    removed = "\x00SCI_WRITER_REMOVED_MARKER\x00"
 
     def source_ids(cid: str, seen: set[str]) -> list[str]:
         if cid in seen:
@@ -466,55 +554,84 @@ def _render_manuscript(run: Path) -> tuple[str, list[dict], dict]:
         kind, identity = match.groups()
         if kind == "EXP":
             mapping[match.group()] = {"result_id": identity, "display": ""}
-            return ""
+            return removed
         ids = source_ids(identity, set())
         for sid in ids:
             if sid not in ordered:
                 ordered.append(sid)
         display = "[" + ", ".join(str(ordered.index(sid) + 1) for sid in ids) + "]" if ids else ""
         mapping[match.group()] = {"claim_id": identity, "source_ids": ids, "result_ids": claims[identity].get("result_ids", []), "display": display}
-        return display
+        return display or removed
 
     rendered = MARKER.sub(replace, text)
+    rendered = re.sub(r"[ \t]*" + re.escape(removed) + r"[ \t]*(?=[.,;:!?…\)\]»])", "", rendered)
+    rendered = rendered.replace(removed, "")
+    brief = read_json(run / "brief.json")
+    publication = brief.get("publication", {})
+    citation_style = publication.get("citation_style", "gost-r-7.0.5-2008")
     bibliography = []
     for index, sid in enumerate(ordered, 1):
         source = sources[sid]
-        authors = ", ".join(source["authors"])
-        year = str(source["year"]) if source["year"] is not None else "б. г."
-        link = "https://doi.org/" + re.sub(r"^https?://(?:dx\.)?doi\.org/", "", source["doi"], flags=re.I) if source.get("doi") else source["url"]
-        bibliography.append(f"{index}. {authors}. {source['title']}. {year}. {link}")
-    language = read_json(run / "brief.json")["language"]
+        reference = publication.get("reference_overrides", {}).get(sid) or format_reference(source, style=citation_style)
+        bibliography.append(f"{index}. {reference}")
+    language = brief["language"]
     heading = "Литература" if language.startswith("ru") else "References"
-    rendered = rendered.rstrip() + "\n\n## " + heading + "\n\n" + "\n\n".join(bibliography) + "\n"
+    if bibliography:
+        rendered = rendered.rstrip() + "\n\n## " + heading + "\n\n" + "\n\n".join(bibliography)
+    header = publication_header(publication)
+    if header.strip():
+        # The reviewed metadata owns the publication title, so do not duplicate it.
+        title = publication.get("title", {}).get("ru")
+        if title and re.match(r"^#\s+" + re.escape(title) + r"\s*\n", rendered):
+            rendered = re.sub(r"^#\s+" + re.escape(title) + r"\s*\n", "", rendered, count=1).lstrip()
+        rendered = header.rstrip() + "\n\n" + rendered.lstrip()
+    rendered = rendered.rstrip() + "\n"
     return rendered, [sources[sid] for sid in ordered], mapping
 
 
 def _bibtex(sources: list[dict]) -> str:
-    def escape(value: str) -> str:
-        return str(value).replace("\\", "\\textbackslash{}").replace("{", "\\{").replace("}", "\\}")
-
-    entries = []
-    for source in sources:
-        kind = "book" if source["type"] == "book" else "article" if source["type"] == "article" else "misc"
-        fields = {"title": source["title"], "author": " and ".join(source["authors"]), "year": source.get("year"), "doi": source.get("doi"), "url": source["url"]}
-        if source.get("journal"):
-            fields["journal"] = source["journal"]
-        if source.get("publisher"):
-            fields["publisher"] = source["publisher"]
-        entries.append("@" + kind + "{" + source["id"] + ",\n" + ",\n".join("  " + k + " = {" + escape(v) + "}" for k, v in fields.items() if v is not None) + "\n}")
-    return "\n\n".join(entries) + "\n"
+    from .publishing import bibliography_bibtex
+    return bibliography_bibtex(sources)
 
 
-def finalize(run: Path) -> dict:
+def finalize(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
     current = status(run)
     if any(item["status"] != "complete" for item in current):
         raise ContractError("Финальная сборка требует всех семи актуальных этапов")
     validation = validate(run)
     if not validation["ok"]:
         raise ContractError(json.dumps(validation["stages"], ensure_ascii=False, indent=2))
+    if (run / "release").is_symlink():
+        raise ContractError("Каталог итогового пакета не должен быть симлинком")
+    target = safe_path(run, "release")
+    if target.exists() and not target.is_dir():
+        raise ContractError("release уже существует и не является каталогом")
+    output = Path(tempfile.mkdtemp(prefix="release-build-", dir=safe_path(run, ".workflow")))
+    try:
+        manifest = _build_release(run, output, formats)
+        # Build in isolation: an earlier DOCX/raw report can never silently join
+        # a later release. Preserve the preceding generated packet as history.
+        previous = None
+        if target.exists():
+            history = safe_path(run, ".workflow/release-history")
+            history.mkdir(exist_ok=True)
+            previous = history / output.name.replace("release-build-", "release-")
+            target.rename(previous)
+        try:
+            output.rename(target)
+        except OSError:
+            if previous is not None:
+                previous.rename(target)
+            raise
+        write_json(safe_path(run, "release-manifest.json"), manifest)
+        return {"status": "released", "directory": str(target), **manifest}
+    finally:
+        if output.exists():
+            shutil.rmtree(output)
+
+
+def _build_release(run: Path, output: Path, formats: tuple[str, ...]) -> dict:
     rendered, sources, mapping = _render_manuscript(run)
-    output = safe_path(run, "release")
-    output.mkdir(exist_ok=True)
     write_text(output / "article.md", rendered)
     write_text(output / "manuscript-audit.md", (run / "manuscript.md").read_text(encoding="utf-8"))
     write_text(output / "bibliography.bib", _bibtex(sources))
@@ -528,27 +645,50 @@ def finalize(run: Path) -> dict:
     for name in ("sources.jsonl", "evidence.jsonl", "glossary.json", "school-map.md", "style-profile.json", "journal-profile.json", "revision-log.md"):
         write_text(safe_path(output, name), (run / name).read_text(encoding="utf-8"))
     final = read_json(run / "reports/final-review.json")
+    brief = read_json(run / "brief.json")
+    ceiling = readiness_requirements(brief)
+    if not ceiling["full_readiness_eligible"]:
+        warning = "> ПРОВЕРЕННАЯ РУКОПИСЬ С ОГРАНИЧЕНИЯМИ. Готовность к подаче не подтверждена. " + "; ".join(final["limitations"]) + "\n\n"
+        rendered = warning + rendered
+        write_text(output / "article.md", rendered)
+    exports = {"files": [], "warnings": []}
+    if formats:
+        from .publishing import export_formats
+        exports = export_formats(rendered, output, formats=formats)
+        if final["ready_for_submission"] and exports.get("warnings"):
+            raise ContractError("Форматный экспорт содержит предупреждения; перед заявлением готовности к подаче устраните их и повторите проверку формата: " + "; ".join(exports["warnings"]))
     manifest = {
-        "created_at": now(), "run_id": read_json(run / "brief.json")["run_id"],
+        "created_at": now(), "run_id": brief["run_id"],
         "policy_sha256": policy_hash(), "manuscript_sha256": sha256(run / "manuscript.md"),
         "scientific_ready": final["scientific_ready"], "ready_for_submission": final["ready_for_submission"],
         "disposition": "prepared_for_submission" if final["ready_for_submission"] else "reviewed_manuscript",
-        "citation_format": "generic_numeric_verify_against_venue",
+        "contract_version": workflow().get("contract_version", workflow()["version"]),
+        **provenance_hashes(),
+        "execution_profile": ceiling["execution_profile"], "review_mode": ceiling["review_mode"],
+        "independent_peer_review": ceiling["independent_peer_review"],
+        "limitation_codes": ceiling["required_limitation_codes"], "limitations": final["limitations"],
+        "citation_format": brief.get("publication", {}).get("citation_style", "gost-r-7.0.5-2008"),
+        "publication_metadata": brief.get("publication", {}), "format_exports": exports,
+        "stage_execution": _state(run)["completed"],
         "automated_checks_are_not_peer_review": True,
         "reproducibility": "Full source texts, author samples and data stay in the run; this release is a manuscript and review package.",
         "run_dependencies_not_bundled": {name: sha256(safe_path(run, name)) for name in linked_artifacts(run) if safe_path(run, name).is_file()},
         "files": {str(path.relative_to(output)): sha256(path) for path in sorted(output.rglob("*")) if path.is_file() and path.name != "release-manifest.json"},
     }
     write_json(output / "release-manifest.json", manifest)
-    write_json(run / "release-manifest.json", manifest)
-    return {"status": "released", "directory": str(output), **manifest}
+    return manifest
 
 
-def export_draft(run: Path) -> dict:
+def export_draft(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
     output = safe_path(run, "draft-export")
     output.mkdir(exist_ok=True)
-    text = (run / "manuscript.md").read_text(encoding="utf-8")
-    write_text(safe_path(output, "DRAFT.md"), "> НЕЗАВЕРШЁННАЯ РУКОПИСЬ. Научная готовность и пригодность к подаче не подтверждены.\n\n" + text)
-    report = {"status": "draft", "scientific_ready": False, "ready_for_submission": False, "stages": status(run), "validation": validate(run)}
+    text = safe_path(run, "manuscript.md").read_text(encoding="utf-8")
+    text = "> НЕЗАВЕРШЁННАЯ РУКОПИСЬ. Научная готовность и пригодность к подаче не подтверждены.\n\n" + text
+    write_text(safe_path(output, "DRAFT.md"), text)
+    exports = {"files": [], "warnings": []}
+    if formats:
+        from .publishing import export_formats
+        exports = export_formats(text, output, formats=formats)
+    report = {"status": "draft", "scientific_ready": False, "ready_for_submission": False, "independent_peer_review": False, "stages": status(run), "validation": validate(run), "format_exports": exports}
     write_json(safe_path(output, "readiness.json"), report)
     return {"directory": str(output), **report}
