@@ -52,6 +52,26 @@ class MCPWorkspace(unittest.TestCase):
         self.assertIn("AGENTS.md", task["instructions"])
         self.assertFalse(any("research-archive" in path for path in task["instructions"]))
 
+    def test_mcp_bibliography_option_preserves_reviewed_artifacts_and_limits(self):
+        import test_profiles as fixtures
+        from sci_writer.cli import hashes
+
+        fixture = fixtures.ExecutionProfiles()
+        fixture.setUp()
+        try:
+            fixture.prepare_offline()
+            fixture.finish_review()
+            before = hashes(fixture.run)
+            service = WorkflowService(fixture.run.parent)
+            result = service.finalize(fixture.run.name, bibliography_style="generic")
+            self.assertEqual(result["citation_format"], "numeric")
+            self.assertEqual(result["bibliography_style"]["requested"], "generic")
+            self.assertFalse(result["ready_for_submission"])
+            self.assertFalse(result["independent_peer_review"])
+            self.assertEqual(before, hashes(fixture.run))
+        finally:
+            fixture.tearDown()
+
 
 @unittest.skipUnless(importlib.util.find_spec("mcp"), "Optional MCP SDK not installed; CI installs the extra")
 class MCPStdio(unittest.TestCase):
@@ -90,6 +110,11 @@ class MCPStdio(unittest.TestCase):
                 listed = call(2, "tools/list", {})
                 names = {item["name"] for item in listed["tools"]}
                 self.assertTrue({"init_run", "next_task", "validate_stage", "complete_stage", "run_quality", "hashes", "finalize", "read_artifact", "write_artifact"}.issubset(names))
+                final_tool = next(item for item in listed["tools"] if item["name"] == "finalize")
+                schema = final_tool.get("inputSchema", final_tool.get("input_schema", {}))
+                choices = json.dumps(schema["properties"]["bibliography_style"])
+                self.assertIn('"gost"', choices)
+                self.assertIn('"generic"', choices)
                 created = call(3, "tools/call", {"name": "init_run", "arguments": {"run_id": "protocol-fixture", "topic": "Проверка реального stdio транспорта", "execution_profile": "offline_sandbox", "review_mode": "single_session_self_audit"}})
                 self.assertFalse(created.get("isError", created.get("is_error", False)))
                 next_result = call(4, "tools/call", {"name": "next_task", "arguments": {"run_id": "protocol-fixture"}})

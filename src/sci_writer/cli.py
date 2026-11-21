@@ -9,7 +9,7 @@ from pathlib import Path
 
 from . import __version__
 from .contracts import (
-    ROOT, ContractError, quality_context, read_json, review_context,
+    ROOT, ContractError, publication_metadata, quality_context, read_json, review_context,
     safe_path, sha256, write_json,
 )
 from .engine import complete, export_draft, finalize, freeze_plan, init_run, next_task, readiness_requirements, status, validate
@@ -49,6 +49,7 @@ def create_style_profile(run: Path) -> dict:
 
 def quality_run(run: Path, *, url: str | None = None, allow_remote: bool = False, glavred_report: str | None = None) -> dict:
     brief = read_json(safe_path(run, "brief.json"))
+    publication = publication_metadata(brief)  # Fail before any provider call or report write.
     glossary = read_json(safe_path(run, "glossary.json"))
     profile = read_json(safe_path(run, "style-profile.json"))
     terms = []
@@ -65,7 +66,7 @@ def quality_run(run: Path, *, url: str | None = None, allow_remote: bool = False
         glavred_report=Path(glavred_report) if glavred_report else None,
         required_tools=brief["quality"]["required_tools"],
         execution_profile=brief.get("execution_profile", "strict_local"),
-        glossary=glossary, publication=brief.get("publication", {}),
+        glossary=glossary, publication=publication,
     )
     report["context_sha256"] = quality_context(run)
     report["author_style_declared_mode"] = profile.get("mode")
@@ -89,6 +90,8 @@ def parser() -> argparse.ArgumentParser:
         command.add_argument("run", type=Path)
         if name in ("finalize", "export-draft"):
             command.add_argument("--formats", default="", help="Дополнительные форматы через запятую: docx,tex; Markdown сохраняется всегда")
+        if name == "finalize":
+            command.add_argument("--bibliography-style", choices=("gost", "generic"), help="Стиль цифровой библиографии; смена согласованного стиля требует повторной проверки перед подачей")
     validation = commands.add_parser("validate")
     validation.add_argument("run", type=Path)
     validation.add_argument("--stage")
@@ -169,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         elif command == "import-bib":
             result = import_bibliography(run, args.path, format=args.format, encoding=args.encoding)
         elif command == "finalize":
-            result = finalize(run, formats=_export_formats(args.formats))
+            result = finalize(run, formats=_export_formats(args.formats), bibliography_style=args.bibliography_style)
         elif command == "export-draft":
             result = export_draft(run, formats=_export_formats(args.formats))
         else:

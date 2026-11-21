@@ -1,0 +1,4 @@
+interface:
+  display_name: "Scientific Writer"
+  short_description: "Исследование и проверка научной статьи"
+  default_prompt: "Используй $sci-writer для подготовки научной статьи по правилам этого репозитория."

@@ -12,6 +12,8 @@ on:
       - 'CLAUDE.md'
       - 'GEMINI.md'
       - '.cursor/**'
+      - '.claude/**'
+      - '.agents/**'
       - '.github/copilot-instructions.md'
       - '.windsurf/**'
       - 'scripts/**'

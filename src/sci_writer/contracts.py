@@ -144,6 +144,28 @@ def schema_errors(data: Any, name: str, label: str = "") -> list[str]:
     return [f"{label or name} {'.'.join(map(str, error.path))}: {error.message}" for error in errors]
 
 
+
+def publication_metadata(brief: dict) -> dict:
+    """Resolve the guide alias without rewriting or normalizing reviewed inputs.
+
+    Both names have exactly the publication.schema.json shape. The raw brief
+    remains part of quality/review hashes, even when two equal objects are used.
+    """
+    if not isinstance(brief, dict):
+        raise ContractError("brief должен быть объектом")
+    canonical = brief.get("publication", {})
+    alias = brief.get("publication_meta", {})
+    for name, value in (("publication", canonical), ("publication_meta", alias)):
+        if not isinstance(value, dict):
+            raise ContractError(f"brief.{name}: ожидается объект издательских метаданных")
+        errors = schema_errors(value, "publication", "brief." + name)
+        if errors:
+            raise ContractError("\n".join(errors))
+    if canonical and alias and canonical != alias:
+        raise ContractError("brief.publication и brief.publication_meta конфликтуют: оставьте один блок или одинаковые значения; затем повторите зависимые проверки")
+    return canonical or alias
+
+
 def indexed(rows: list[dict], label: str) -> tuple[dict[str, dict], list[str]]:
     result, errors = {}, []
     for row in rows:

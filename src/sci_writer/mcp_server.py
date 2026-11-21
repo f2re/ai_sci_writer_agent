@@ -9,6 +9,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Literal
 
 from . import engine
 from .cli import create_style_profile, hashes as run_hashes, quality_run
@@ -86,10 +87,11 @@ class WorkflowService:
             raise ContractError("Дополнительные форматы: docx, tex; Markdown формируется всегда")
         return values
 
-    def finalize(self, run_id: str, formats: list[str] | None = None) -> dict:
+    def finalize(self, run_id: str, formats: list[str] | None = None,
+                 bibliography_style: Literal["gost", "generic"] | None = None) -> dict:
         run = self.run_path(run_id)
         with engine.state_lock(run):
-            return engine.finalize(run, formats=self.formats(formats))
+            return engine.finalize(run, formats=self.formats(formats), bibliography_style=bibliography_style)
 
     def export_draft(self, run_id: str, formats: list[str] | None = None) -> dict:
         run = self.run_path(run_id)
@@ -150,7 +152,7 @@ def build_server(workspace: Path):
         (service.complete_stage, "Complete a stage only when all evidence, service and review gates pass."),
         (service.run_quality, "Execute real local lint and configured checks; preserve skipped/failed statuses and consent."),
         (service.hashes, "Get actual artifact and review-context SHA-256 values; never invent them."),
-        (service.finalize, "Assemble an accepted or explicitly limited reviewed manuscript; never submit it to a journal."),
+        (service.finalize, "Assemble an accepted or limited reviewed manuscript; optional gost/generic bibliography cannot override a submission-ready reviewed style. Never submit to a journal."),
         (service.status, "Inspect stage freshness and the readiness ceiling imposed by execution/review modes."),
         (service.read_artifact, "Read a text artifact and its hash within one run, with a 4 MB limit."),
         (service.write_artifact, "Create/edit a text artifact using the current expected hash; internal state/releases are protected."),

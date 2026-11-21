@@ -14,7 +14,7 @@ from typing import Iterator
 from .contracts import (
     ROOT, MARKER, PLACEHOLDER, REVIEW_DIMENSIONS, ContractError, indexed,
     manuscript_errors, now, read_json, read_jsonl, safe_path, schema_errors,
-    linked_artifacts, quality_context, review_context,
+    linked_artifacts, publication_metadata, quality_context, review_context,
     sha256, validate_evidence, validate_glossary, validate_results,
     validate_review, validate_sources, write_json, write_text,
 )
@@ -261,7 +261,7 @@ def _intake_errors(run: Path, brief: dict) -> list[str]:
     if errors:
         return errors
     from .publishing import publication_errors
-    errors.extend(publication_errors(brief.get("publication", {})))
+    errors.extend(publication_errors(publication_metadata(brief)))
     required = brief["quality"]["required_tools"]
     if "ru_science_lint" not in required or not any(x in required for x in ("languagetool", "glavred")):
         errors.append("Этап 5 требует локальный lint и как минимум одну реальную сервисную проверку")
@@ -329,7 +329,7 @@ def _quality_errors(run: Path, brief: dict) -> list[str]:
         errors.append("Инструментальная проверка содержит блокирующие замечания")
     errors.extend(verify_raw_artifacts(
         report, run / "reports", (run / "manuscript.md").read_bytes().decode("utf-8"),
-        glossary=read_json(run / "glossary.json"), publication=brief.get("publication", {}), execution_profile=profile,
+        glossary=read_json(run / "glossary.json"), publication=publication_metadata(brief), execution_profile=profile,
     ))
     raw = report.get("raw_artifacts", [])
     for item in raw:
@@ -466,7 +466,7 @@ def validate_stage(run: Path, identity: str) -> list[str]:
             if any(i.get("status") == "open" for r in (domain, methods, final) for i in r.get("issues", [])):
                 errors.append("Готовность к подаче невозможна при открытых замечаниях")
             from .publishing import publication_errors
-            errors.extend(publication_errors(brief.get("publication", {}), journal.get("publication_required_fields", [])))
+            errors.extend(publication_errors(publication_metadata(brief), journal.get("publication_required_fields", [])))
         return errors
     except (ContractError, OSError, UnicodeError, TypeError, KeyError, AttributeError) as exc:
         return errors + [str(exc)]
@@ -529,7 +529,24 @@ def freeze_plan(run: Path) -> dict:
     return record
 
 
-def _render_manuscript(run: Path) -> tuple[str, list[dict], dict]:
+
+def _bibliography_style(publication: dict, requested: str | None = None) -> dict:
+    aliases = {"gost": "gost-r-7.0.5-2008", "generic": "numeric"}
+    if requested is not None and requested not in aliases:
+        raise ContractError("bibliography_style: ожидается gost или generic")
+    configured = publication.get("citation_style", "gost-r-7.0.5-2008")
+    effective = aliases[requested] if requested is not None else configured
+    return {"requested": requested, "configured": configured, "effective": effective,
+            "override_applied": effective != configured,
+            "reference_overrides_priority": "per_source_reviewed_overrides"}
+
+
+def _check_submission_style(final: dict, style: dict) -> None:
+    if final.get("ready_for_submission") is True and style["override_applied"]:
+        raise ContractError("Нельзя менять проверенный стиль библиографии при ready_for_submission=true. Измените citation_style в brief.publication (или publication_meta) и повторите зависимые проверки/рецензии; прежние отчёты не обновляйте заменой хеша.")
+
+
+def _render_manuscript(run: Path, *, bibliography_style: str | None = None) -> tuple[str, list[dict], dict]:
     from .publishing import format_reference, publication_header
     sources, source_errors = validate_sources(run)
     claims, errors = validate_evidence(run, sources)
@@ -567,8 +584,8 @@ def _render_manuscript(run: Path) -> tuple[str, list[dict], dict]:
     rendered = re.sub(r"[ \t]*" + re.escape(removed) + r"[ \t]*(?=[.,;:!?…\)\]»])", "", rendered)
     rendered = rendered.replace(removed, "")
     brief = read_json(run / "brief.json")
-    publication = brief.get("publication", {})
-    citation_style = publication.get("citation_style", "gost-r-7.0.5-2008")
+    publication = publication_metadata(brief)
+    citation_style = _bibliography_style(publication, bibliography_style)["effective"]
     bibliography = []
     for index, sid in enumerate(ordered, 1):
         source = sources[sid]
@@ -594,13 +611,16 @@ def _bibtex(sources: list[dict]) -> str:
     return bibliography_bibtex(sources)
 
 
-def finalize(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
+def finalize(run: Path, *, formats: tuple[str, ...] = (), bibliography_style: str | None = None) -> dict:
+    publication = publication_metadata(read_json(safe_path(run, "brief.json")))
+    style = _bibliography_style(publication, bibliography_style)
     current = status(run)
     if any(item["status"] != "complete" for item in current):
         raise ContractError("Финальная сборка требует всех семи актуальных этапов")
     validation = validate(run)
     if not validation["ok"]:
         raise ContractError(json.dumps(validation["stages"], ensure_ascii=False, indent=2))
+    _check_submission_style(read_json(safe_path(run, "reports/final-review.json")), style)
     if (run / "release").is_symlink():
         raise ContractError("Каталог итогового пакета не должен быть симлинком")
     target = safe_path(run, "release")
@@ -608,7 +628,7 @@ def finalize(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
         raise ContractError("release уже существует и не является каталогом")
     output = Path(tempfile.mkdtemp(prefix="release-build-", dir=safe_path(run, ".workflow")))
     try:
-        manifest = _build_release(run, output, formats)
+        manifest = _build_release(run, output, formats, bibliography_style=bibliography_style)
         # Build in isolation: an earlier DOCX/raw report can never silently join
         # a later release. Preserve the preceding generated packet as history.
         previous = None
@@ -630,8 +650,13 @@ def finalize(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
             shutil.rmtree(output)
 
 
-def _build_release(run: Path, output: Path, formats: tuple[str, ...]) -> dict:
-    rendered, sources, mapping = _render_manuscript(run)
+def _build_release(run: Path, output: Path, formats: tuple[str, ...], *, bibliography_style: str | None = None) -> dict:
+    brief = read_json(safe_path(run, "brief.json"))
+    publication = publication_metadata(brief)
+    style = _bibliography_style(publication, bibliography_style)
+    final = read_json(safe_path(run, "reports/final-review.json"))
+    _check_submission_style(final, style)
+    rendered, sources, mapping = _render_manuscript(run, bibliography_style=bibliography_style)
     write_text(output / "article.md", rendered)
     write_text(output / "manuscript-audit.md", (run / "manuscript.md").read_text(encoding="utf-8"))
     write_text(output / "bibliography.bib", _bibtex(sources))
@@ -644,8 +669,6 @@ def _build_release(run: Path, output: Path, formats: tuple[str, ...]) -> dict:
         write_text(safe_path(output, "reports/" + item["path"]), origin.read_bytes().decode("utf-8"))
     for name in ("sources.jsonl", "evidence.jsonl", "glossary.json", "school-map.md", "style-profile.json", "journal-profile.json", "revision-log.md"):
         write_text(safe_path(output, name), (run / name).read_text(encoding="utf-8"))
-    final = read_json(run / "reports/final-review.json")
-    brief = read_json(run / "brief.json")
     ceiling = readiness_requirements(brief)
     if not ceiling["full_readiness_eligible"]:
         warning = "> ПРОВЕРЕННАЯ РУКОПИСЬ С ОГРАНИЧЕНИЯМИ. Готовность к подаче не подтверждена. " + "; ".join(final["limitations"]) + "\n\n"
@@ -667,8 +690,8 @@ def _build_release(run: Path, output: Path, formats: tuple[str, ...]) -> dict:
         "execution_profile": ceiling["execution_profile"], "review_mode": ceiling["review_mode"],
         "independent_peer_review": ceiling["independent_peer_review"],
         "limitation_codes": ceiling["required_limitation_codes"], "limitations": final["limitations"],
-        "citation_format": brief.get("publication", {}).get("citation_style", "gost-r-7.0.5-2008"),
-        "publication_metadata": brief.get("publication", {}), "format_exports": exports,
+        "citation_format": style["effective"], "bibliography_style": style,
+        "publication_metadata": publication, "format_exports": exports,
         "stage_execution": _state(run)["completed"],
         "automated_checks_are_not_peer_review": True,
         "reproducibility": "Full source texts, author samples and data stay in the run; this release is a manuscript and review package.",
@@ -680,6 +703,7 @@ def _build_release(run: Path, output: Path, formats: tuple[str, ...]) -> dict:
 
 
 def export_draft(run: Path, *, formats: tuple[str, ...] = ()) -> dict:
+    publication_metadata(read_json(safe_path(run, "brief.json")))  # Alias conflicts fail before creating output.
     output = safe_path(run, "draft-export")
     output.mkdir(exist_ok=True)
     text = safe_path(run, "manuscript.md").read_text(encoding="utf-8")

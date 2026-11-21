@@ -14,7 +14,7 @@ from sci_writer.engine import init_run, next_task, workflow
 class PromptContracts(unittest.TestCase):
     def test_workflow_routes_to_existing_scoped_modules(self):
         config = workflow()
-        self.assertEqual(config["contract_version"], "2.0")
+        self.assertEqual(config["contract_version"], "2.1")
         self.assertTrue((ROOT / config["coordinator"]).is_file())
         stages = config["stages"]
         self.assertEqual(len(stages), 7)
@@ -56,6 +56,7 @@ class PromptContracts(unittest.TestCase):
         paths = [ROOT / "README.md", ROOT / "AGENTS.md"]
         paths += list((ROOT / "docs").glob("*.md"))
         paths += list((ROOT / "skills").rglob("*.md"))
+        paths += list((ROOT / ".agents/skills").rglob("*.md"))
         paths += list((ROOT / "agents").glob("*.md"))
         for path in paths:
             text = path.read_text(encoding="utf-8")
@@ -74,6 +75,35 @@ class PromptContracts(unittest.TestCase):
         cursor = (ROOT / ".cursor/rules/sci-writer.mdc").read_text(encoding="utf-8")
         self.assertRegex(cursor, r"(?m)^alwaysApply: true$")
         self.assertIn("research-archive/", (ROOT / ".cursorignore").read_text(encoding="utf-8"))
+
+    def test_repository_skill_is_a_discoverable_thin_entrypoint(self):
+        path = ROOT / ".agents/skills/sci-writer/SKILL.md"
+        text = path.read_text(encoding="utf-8")
+        match = re.match(r"\A---\nname: ([a-z0-9]+(?:-[a-z0-9]+)*)\ndescription: (.+)\n---\n", text)
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), path.parent.name)
+        self.assertTrue(1 <= len(match.group(2)) <= 1024)
+        self._check_links(path, text)
+        for required in ("../../../AGENTS.md", "../../../agents/00-orchestrator.md", "../../../config/workflow.json"):
+            self.assertIn(required, text)
+        self.assertNotIn("00-coordinator.md", text)
+        self.assertNotIn("[TODO", text)
+        self.assertIn("sci-writer next", text)
+        self.assertNotIn("../../../research-archive", text)
+        self.assertNotIn("skills/russian-school/SKILL.md", text)
+        routed_paths = [relative for stage in workflow()["stages"] for relative in stage["agents"]]
+        self.assertNotIn(".agents/skills/sci-writer/SKILL.md", routed_paths)
+        self.assertEqual(len(list((ROOT / "skills").glob("*/SKILL.md"))), 8)
+
+    def test_claude_excludes_only_archive_with_supported_permissions(self):
+        text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?m)^@AGENTS\.md$")
+        settings = json.loads((ROOT / ".claude/settings.json").read_text(encoding="utf-8"))
+        self.assertEqual(settings, {"permissions": {"deny": ["Read(/research-archive/**)"]}})
+        self.assertFalse((ROOT / ".claudeignore").exists())
+        ignored = (ROOT / ".cursorignore").read_text(encoding="utf-8")
+        patterns = [line.strip() for line in ignored.splitlines() if line.strip() and not line.startswith("#")]
+        self.assertEqual(patterns, ["research-archive/"])
 
     def test_next_task_loads_only_current_stage_paths(self):
         with tempfile.TemporaryDirectory() as temporary:
